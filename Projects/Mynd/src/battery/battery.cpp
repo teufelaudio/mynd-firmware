@@ -329,12 +329,16 @@ class ChargerLLController : public IChargerLLController
   public:
     void enable(bool bfc_enabled) override
     {
-        board_link_charger_enable_fast_charge(bfc_enabled);
-
         /* To comply with regulations, the MCU must adjust the charge voltage to 5V
          * once the battery reaches full charge or disabled. When the charging is active
          * we can request 20V. */
         board_link_usb_pd_controller_set_max_source_voltage(USB_PD_MAX_SOURCE_VOLTAGE_20V);
+
+        /* Select fast_charge/battery_friendly mode **after** PD controller applies the source voltage.
+         * Otherwise the current value in the charger can be overwritten. */
+        vTaskDelay(300);
+        bool fast_charge = !bfc_enabled;
+        board_link_charger_enable_fast_charge(fast_charge);
     }
     void disable() override
     {

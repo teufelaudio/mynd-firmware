@@ -42,7 +42,7 @@
 #include "task_bluetooth.h"
 #include "temperature/temperature.h"
 
-#include "external/teufel/libs/tshell/tshell.h"
+#include "src/tshell/tshell.h"
 
 // #define BATTERY_DEBUG 1
 

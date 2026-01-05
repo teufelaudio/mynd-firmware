@@ -21,7 +21,6 @@
 #include "stm32f0xx_hal.h"
 #include "persistent_storage/kvstorage.h"
 
-#include "logger.h"
 #include "external/teufel/libs/GenericThread/GenericThread++.h"
 #include "task_audio.h"
 #include "task_bluetooth.h"
@@ -29,7 +28,8 @@
 #include "task_priorities.h"
 #include "tests.h"
 
-#include "external/teufel/libs/tshell/tshell.h"
+#include "logger.h"
+#include "src/tshell/tshell.h"
 #include "external/teufel/libs/core_utils/mapper.h"
 #include "external/teufel/libs/core_utils/overload.h"
 #include "external/teufel/libs/core_utils/sync.h"
@@ -816,6 +816,14 @@ static const GenericThread::Config<AudioMessage> threadConfig = {
 #endif
                             }
 
+#ifndef INCLUDE_PRODUCTION_TESTS
+                            auto bass = isProperty(Tua::EcoMode{true}) ? 0 : getProperty<Tua::BassLevel>().value;
+                            auto treble = isProperty(Tua::EcoMode{true}) ? 0 : getProperty<Tua::TrebleLevel>().value;
+
+                            board_link_amps_set_bass_level(bass);
+                            board_link_amps_set_treble_level(treble);
+#endif
+
 #ifdef BOARD_CONFIG_HAS_NO_I2C_MODE
                             if (s_audio.no_i2c_mode)
                             {
@@ -893,6 +901,12 @@ static const GenericThread::Config<AudioMessage> threadConfig = {
                     setProperty(p);
 #ifndef INCLUDE_PRODUCTION_TESTS
                     board_link_amps_enable_eco_mode(p.value);
+
+                    auto bass = isProperty(Tua::EcoMode{true}) ? 0 : getProperty<Tua::BassLevel>().value;
+                    auto treble = isProperty(Tua::EcoMode{true}) ? 0 : getProperty<Tua::TrebleLevel>().value;
+
+                    board_link_amps_set_bass_level(bass);
+                    board_link_amps_set_treble_level(treble);
 #endif
                     Leds::set_source_pattern(p.value ? Leds::SourcePattern::EcoModeOn : Leds::SourcePattern::EcoModeOff);
                     Teufel::Task::Bluetooth::postMessage(ot_id, p);

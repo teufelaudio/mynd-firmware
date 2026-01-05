@@ -4,7 +4,7 @@
 #include "ux/input/input.h"
 
 #include "gitversion/version.h"
-#include "external/teufel/libs/tshell/tshell.h"
+#include "src/tshell/tshell.h"
 
 #include "config.h"
 #include "battery.h"

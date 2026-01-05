@@ -32,7 +32,7 @@
 #include "persistent_storage/kvstorage.h"
 #include "stm32f0xx_hal.h"
 
-#include "external/teufel/libs/tshell/tshell.h"
+#include "src/tshell/tshell.h"
 
 #define TASK_SYSTEM_STACK_SIZE 384
 #define QUEUE_SIZE             5

@@ -31,7 +31,7 @@
 #include "external/teufel/libs/core_utils/overload.h"
 #include "external/teufel/libs/core_utils/sync.h"
 #include "external/teufel/libs/app_assert/app_assert.h"
-#include "gitversion//version.h"
+#include "gitversion/version.h"
 #include "persistent_storage/kvstorage.h"
 
 #ifdef INCLUDE_PRODUCTION_TESTS

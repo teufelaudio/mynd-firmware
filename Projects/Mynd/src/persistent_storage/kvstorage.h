@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef INCLUDE_PRODUCTION_TESTS
-#include <unordered_map>
-#include "external/teufel/libs/tshell/tshell.h"
-#endif // INCLUDE_PRODUCTION_TEST
 #include <optional>
 #include <variant>
 #include "logger.h"

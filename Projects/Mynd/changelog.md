@@ -1,9 +1,12 @@
 # MYND changelog
 
 ## [Unreleased]
+
+## [1.5.0] - 2025-09-05
 ### Fixed
 - Disable standby timer when the BT module in the DFU state (OAM-1210)
 - Initial charge type and charge current (OAM-1215)
+- Set EQ (bass/treble) after boot up (OAM-1221)
 
 ## [1.4.0] - 2025-04-07
 ### Fixed

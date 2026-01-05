@@ -227,6 +227,12 @@ void check_idle_timeout()
 {
     auto is_streaming_active = getProperty<Tub::StreamingActive>().value;
 
+    // Disable standby timer when the BT module in the DFU mode
+    if (isProperty(Ux::Bluetooth::Status::DfuMode))
+    {
+        s_system.stream_inactive_timestamp = get_systick();
+    }
+
     // If the stream just became inactive, record the current time
     if (!is_streaming_active && s_system.stream_inactive_timestamp == 0)
     {

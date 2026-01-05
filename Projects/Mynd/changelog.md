@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 ### Fixed
+- disable standby timer when the BT module in the DFU state (OAM-1210)
+
+## [1.4.0] - 2025-04-07
+### Fixed
 - Power consumption(must be below 0.5W) when the battery is fully charged (OAM-1200)
 
 ### Added

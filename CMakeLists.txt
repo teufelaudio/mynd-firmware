@@ -65,24 +65,19 @@ set(CMAKE_CPPFILT "${TOOLCHAIN_BIN_DIR}/${TARGET_TRIPLET}-c++filt${TOOL_EXECUTAB
 set(CMAKE_AR "${TOOLCHAIN_BIN_DIR}/${TARGET_TRIPLET}-gcc-ar${TOOL_EXECUTABLE_SUFFIX}" CACHE INTERNAL "gcc-ar")
 set(CMAKE_RANLIB "${TOOLCHAIN_BIN_DIR}/${TARGET_TRIPLET}-gcc-ranlib${TOOL_EXECUTABLE_SUFFIX}" CACHE INTERNAL "ranlib")
 
-# This global function enables _pre-build_ build-time command, which executes
-# every make call to run git describe, get current version and update gitversion.h.
-# To enable this option gitversion.h MUST be added as dependency into ADD_EXECUTABLE function.
-function(GITVERSION_ENABLE TARGET)
-    target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR})
-
-    add_custom_command(
-        OUTPUT gitversion.h
-        COMMAND ${CMAKE_COMMAND}
+add_custom_target(GITVERSION
+    COMMAND ${CMAKE_COMMAND}
         -Droot_dir="${CMAKE_SOURCE_DIR}"
         -Dbin_dir="${CMAKE_BINARY_DIR}"
         -P "${CMAKE_SOURCE_DIR}/support/cmake/gitversion.cmake"
-    )
+    BYPRODUCTS
+        ${CMAKE_BINARY_DIR}/gitversion.h
+)
 
-    # gitversion.h file MUST be set as dependency for the TARGET
-    # to enable versioning by "git describe"
-    add_custom_target(GITVERSION_${TARGET} DEPENDS "gitversion.h")
-    add_dependencies(${TARGET} GITVERSION_${TARGET})
+# Set up the target's gitversion.h dependency and related properties
+function(GITVERSION_ENABLE TARGET)
+    target_include_directories(${TARGET} BEFORE PRIVATE ${CMAKE_BINARY_DIR})
+    add_dependencies(${TARGET} GITVERSION)
 
 if(EXISTS ${CMAKE_BINARY_DIR}/gitversion.h)
     # Set target's parameter VERSION, which can be used from the Project's cmake.

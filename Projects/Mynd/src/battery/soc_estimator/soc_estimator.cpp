@@ -56,8 +56,8 @@ void SocEstimator::stat() const
 {
     // Convert m_integrated_charge from ampere-seconds to milli-ampere-hours
     auto charge_mah = m_integrated_charge * 1000.f / 3600.f;
-    log_warn_raw("soc: algo state: %s, CHG: %d (mAh), CAP: %d (As), BAT: %u (mV)\r\n", getDesc(m_algo_state),
-                 static_cast<int>(charge_mah), static_cast<int>(m_capacity), m_battery_voltage_mv);
+    log_dbg_raw("soc: algo state: %s, CHG: %d (mAh), CAP: %d (As), BAT: %u (mV)\r\n", getDesc(m_algo_state),
+                static_cast<int>(charge_mah), static_cast<int>(m_capacity), m_battery_voltage_mv);
 }
 
 void SocEstimator::init(uint16_t battery_voltage_mv)

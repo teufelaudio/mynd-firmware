@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 ### Fixed
-- disable standby timer when the BT module in the DFU state (OAM-1210)
+- Disable standby timer when the BT module in the DFU state (OAM-1210)
+- Initial charge type and charge current (OAM-1215)
 
 ## [1.4.0] - 2025-04-07
 ### Fixed

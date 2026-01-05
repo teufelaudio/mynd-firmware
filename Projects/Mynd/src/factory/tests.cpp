@@ -580,7 +580,7 @@ SHELL_CMD_ARG_REGISTER(AR, NULL, "t: Get Battery Charge Status", +[]()
 {
     if( test_mode_activated )
     {
-        Teufel::Ux::System::ChargeType chargeType = Teufel::Task::Battery::get_charge_type();
+        Teufel::Ux::System::ChargeType chargeType = getProperty<Teufel::Ux::System::ChargeType>();
         printf("Charge Status: %s\r\n", (chargeType == Teufel::Ux::System::ChargeType::FastCharge) ? "Fast Charge (1)" : "Battery Friendly (0)");
     }
 }, 2, 1);

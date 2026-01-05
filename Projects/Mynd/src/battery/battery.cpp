@@ -175,6 +175,8 @@ void init()
     if (board_link_charger_setup() == 0)
     {
         s_battery.is_charger_initialized = true;
+        auto charge_type                 = getProperty<Tus::ChargeType>();
+        set_charge_type(charge_type);
     }
 
     bsp_adc_start((uint32_t *) s_adc_buffer, adc_buffer_size,
@@ -372,7 +374,7 @@ static void monitor_charger_status()
 
     auto charger_state =
         charge_controller.process(s_battery.last_battery_voltage_mv, s_battery.last_battery_current,
-                                  is_charging_allowed, ac_plugged, isProperty(Tus::ChargeType::FastCharge));
+                                  is_charging_allowed, ac_plugged, isProperty(Tus::ChargeType::BatteryFriendly));
 
     if (not isProperty(charger_state))
     {
@@ -548,16 +550,11 @@ void poll()
 
 Ux::System::ChargeType toggle_fast_charging()
 {
-    auto charge_type = !board_link_charger_is_fast_charge_enabled() ? Ux::System::ChargeType::FastCharge
-                                                                    : Ux::System::ChargeType::BatteryFriendly;
+    auto charge_type = isProperty(Tus::ChargeType::FastCharge) ? Ux::System::ChargeType::BatteryFriendly
+                                                               : Ux::System::ChargeType::FastCharge;
+
     set_charge_type(charge_type);
     return charge_type;
-}
-
-Ux::System::ChargeType get_charge_type()
-{
-    bool enable_fast_charge = board_link_charger_is_fast_charge_enabled();
-    return enable_fast_charge ? Ux::System::ChargeType::FastCharge : Ux::System::ChargeType::BatteryFriendly;
 }
 
 void set_charge_type(const Ux::System::ChargeType &type)

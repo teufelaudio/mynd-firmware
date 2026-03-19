@@ -50,6 +50,20 @@ typedef enum
 } tas5805m_device_state_t;
 
 /**
+ * @brief Audio sampling rate values from FS_MON register (bits 3-0)
+ */
+typedef enum
+{
+    TAS5805M_FS_ERROR      = 0x0, ///< 0000: FS Error
+    TAS5805M_FS_8KHZ       = 0x2, ///< 0010: 8KHz
+    TAS5805M_FS_16KHZ      = 0x4, ///< 0100: 16KHz
+    TAS5805M_FS_32KHZ      = 0x6, ///< 0110: 32KHz
+    TAS5805M_FS_RESERVED_8 = 0x8, ///< 1000: Reserved
+    TAS5805M_FS_48KHZ      = 0x9, ///< 1001: 48KHz
+    TAS5805M_FS_96KHZ      = 0xB, ///< 1011: 96KHz
+} tas5805m_fs_t;
+
+/**
  * @brief Initializes the TAS5805M driver.
  *
  * @param[in] p_config          pointer to configuration structure
@@ -143,3 +157,27 @@ int tas5805m_set_volume(const tas5805m_handler_t *h, int8_t volume_db);
  * @return 0 if successful, error code otherwise
  */
 int tas5805m_clear_analog_fault(const tas5805m_handler_t *h);
+
+/**
+ * @brief Read FS_MON register (0x37) and extract sampling rate.
+ *
+ * @param[in]  h         pointer to handler
+ * @param[out] p_fs      pointer to store detected sampling rate (extracted from bits 3-0)
+ *
+ * @return 0 if successful, error code otherwise
+ *
+ * @details Table 7-19. FS_MON Register Field Descriptions
+ * Bit  Field            Type  Reset  Description
+ * 7-6  RESERVED         R/W   00     This bit is reserved
+ * 5-4  BCLK_RATIO_HIGH  R     00     2 msbs of detected BCK ratio
+ * 3-0  FS               R     0000   These bits indicate the currently detected audio sampling rate.
+ *                                    0000: FS Error
+ *                                    0010: 8KHz
+ *                                    0100: 16KHz
+ *                                    0110: 32KHz
+ *                                    1000: Reserved
+ *                                    1001: 48KHz
+ *                                    1011: 96KHz
+ *                                    Others: Reserved
+ */
+int tas5805m_read_fs_mon(const tas5805m_handler_t *h, tas5805m_fs_t *p_fs);

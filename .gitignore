@@ -45,3 +45,5 @@
 # vscode settings
 .vscode
 
+# OSX specific files
+.DS_Store

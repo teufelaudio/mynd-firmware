@@ -4,7 +4,6 @@
 #include "stream_buffer.h"
 #include "task.h"
 #include "stm32f0xx_hal.h"
-#include "stm32f0xx_ll_usart.h"
 #include "logger.h"
 #include <stdbool.h>
 

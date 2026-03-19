@@ -1,0 +1,17 @@
+# Built release package (run components/package/build.sh to create)
+MYNDberry.zip
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw
+*.pyzwz
+*.pyzwzw
+
+# OSX specific files
+.DS_Store

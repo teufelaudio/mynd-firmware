@@ -31,12 +31,12 @@
 #include "external/teufel/libs/core_utils/overload.h"
 #include "external/teufel/libs/core_utils/sync.h"
 #include "external/teufel/libs/app_assert/app_assert.h"
-#include "gitversion//version.h"
+#include "gitversion/version.h"
 #include "persistent_storage/kvstorage.h"
 
-#ifdef INCLUDE_PRODUCTION_TESTS
+#ifdef INCLUDE_FACTORY_TESTS
 #include "external/teufel/libs/tshell/tshell.h"
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif // INCLUDE_FACTORY_TESTS
 
 #define TASK_BLUETOOTH_STACK_SIZE 448
 #define QUEUE_SIZE                8
@@ -47,7 +47,6 @@ namespace Teufel::Task::Bluetooth
 namespace Tua = Teufel::Ux::Audio;
 namespace Tub = Teufel::Ux::Bluetooth;
 namespace Tus = Teufel::Ux::System;
-namespace Tua = Teufel::Ux::Audio;
 
 static Teufel::Ux::System::Task                                ot_id        = Teufel::Ux::System::Task::Bluetooth;
 static Teufel::GenericThread::GenericThread<BluetoothMessage> *task_handler = nullptr;
@@ -142,7 +141,7 @@ TS_KEY_VALUE_CONST_MAP(MultichainExitReasonMapper, Tub::MultichainExitReason, ac
                        {Tub::MultichainExitReason::UserRequest, ACTIONSLINK_CSB_MASTER_EXIT_REASON_USER_REQUEST},
                        {Tub::MultichainExitReason::PowerOff, ACTIONSLINK_CSB_MASTER_EXIT_REASON_POWER_OFF}, )
 
-#ifdef INCLUDE_PRODUCTION_TESTS
+#ifdef INCLUDE_FACTORY_TESTS
 static void hex_to_mac(uint64_t hexNumber, char *formattedMACAddr)
 {
     // Define a mask for each byte in the 64-bit number
@@ -161,7 +160,7 @@ static void hex_to_mac(uint64_t hexNumber, char *formattedMACAddr)
             sprintf(formattedMACAddr + strlen(formattedMACAddr), " %02X", currentByte);
     }
 }
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif // INCLUDE_FACTORY_TESTS
 
 static int get_bt_fw_version(actionslink_firmware_version_t *p_version)
 {
@@ -607,9 +606,7 @@ static const actionslink_event_handlers_t actionslink_event_handlers = {
             // The delay amount of 200 ms is derived from testing
             if (!is_usb_connected && isProperty(Tub::Status::UsbConnected))
             {
-                board_link_amps_mute(true);
-                vTaskDelay(pdMS_TO_TICKS(200));
-                board_link_amps_mute(false);
+                board_link_amps_toggle_mute();
             }
 
             s_bluetooth.is_usb_source_available = is_usb_connected;
@@ -964,9 +961,9 @@ static const GenericThread::Config<BluetoothMessage> threadConfig = {
                     s_bluetooth.number_of_connected_devices = 0;
                     log_info("Connected devices: %d", s_bluetooth.number_of_connected_devices);
 
-#ifdef INCLUDE_PRODUCTION_TESTS
+#ifdef INCLUDE_FACTORY_TESTS
                     Teufel::Task::Bluetooth::postMessage(ot_id, Teufel::Ux::Bluetooth::AudioBypassProdTest::Exit);
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif // INCLUDE_FACTORY_TESTS
 
                     // Play factory reset sound icon
                     postMessage(ot_id,
@@ -1096,7 +1093,7 @@ static const GenericThread::Config<BluetoothMessage> threadConfig = {
                         // log_error("Failed to notify eco mode state");
                     }
                 },
-#ifdef INCLUDE_PRODUCTION_TESTS
+#ifdef INCLUDE_FACTORY_TESTS
                 [](Teufel::Ux::Bluetooth::FWVersionProdTest)
                 {
                     actionslink_firmware_version_t version = {0};
@@ -1189,7 +1186,7 @@ static const GenericThread::Config<BluetoothMessage> threadConfig = {
                             break;
                     }
                 },
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif // INCLUDE_FACTORY_TESTS
             },
             msg);
     },

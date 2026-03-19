@@ -1,0 +1,149 @@
+syntax = "proto3";
+package ActionsLink;
+
+import "audio.proto";
+import "battery.proto";
+import "common.proto";
+import "system.proto";
+
+import "host.proto";
+import "leds.proto";
+
+import "nanopb.proto";
+
+message FromMcu {
+  oneof Payload {
+    FromMcuRequest  request = 1;
+    FromMcuResponse response = 2;
+    FromMcuEvent    event = 3;
+  };
+}
+
+message FromMcuRequest {
+  /** Request sequence number. */
+  uint32 seq = 1;
+
+  option (nanopb_msgopt).submsg_callback = true;
+  oneof Request {
+    /** Start of system requests. */
+    Common.Command                soft_reset = 10;
+    Common.Command                get_firmware_version = 11;
+    System.PowerState             set_power_state = 12;
+
+    /** Start of audio requests. */
+    Audio.VolumeControl           set_volume = 22;
+    Rpi.Host.PlaybackAction       send_playback_action = 31;
+
+    /** RPi WiFi */
+    Rpi.Host.CycleSource          cycle_source = 53;
+  };
+}
+
+message FromMcuResponse {
+  /** Sequence number of the request this message is responding to. */
+  uint32 seq = 1;
+
+  option (nanopb_msgopt).submsg_callback = true;
+  oneof Response {
+    /** Start of system responses. */
+    System.FirmwareVersion        get_mcu_firmware_version = 10;
+    Common.Result                 set_power_state = 12;
+
+    /** Start of audio responses. */
+    Common.Result                 set_bass = 30;
+    Audio.Bass                    get_bass = 31;
+    Common.Result                 set_treble = 32;
+    Audio.Treble                  get_treble = 33;
+
+    Common.Result                 send_playback_action = 40;
+
+    /** Start of battery responses. */
+    Common.Result                 set_battery_friendly_charging = 50;
+    bool                          get_battery_friendly_charging = 51;
+  }
+}
+
+message FromMcuEvent {
+  oneof Event {
+    /** Start of system events. */
+    uint32 notify_battery_level = 12;
+    Battery.ChargerStatus notify_charger_status = 13;
+    bool notify_battery_friendly_charging = 15;
+
+    /** Audio events */
+    bool notify_eco_mode = 30;
+
+    /** RPi WiFi command events */
+    Rpi.Host.ConfigureWiFiCommand notify_configure_wifi_command = 41;
+    Rpi.Host.EnableHotspotCommand notify_enable_hotspot_command = 51;
+    Rpi.Host.CycleWiFiNetworkCommand notify_cycle_wifi_network_command = 52;
+  }
+}
+
+message ToMcu {
+  option (nanopb_msgopt).submsg_callback = true;
+  oneof Payload {
+    ToMcuRequest  request = 1;
+    ToMcuResponse response = 2;
+    ToMcuEvent    event = 3;
+  };
+}
+
+message ToMcuRequest {
+  /** Request sequence number. */
+  uint32 seq = 1;
+
+  option (nanopb_msgopt).submsg_callback = true;
+  oneof Request {
+    /** Start of system requests. */
+    Common.Command         get_mcu_firmware_version = 10;
+
+    /** Audio related requests. */
+    Audio.Bass             set_bass = 30;
+    Common.Command         get_bass = 31;
+    Audio.Treble           set_treble = 32;
+    Common.Command         get_treble = 33;
+
+    /** Battery related requests. */
+    bool                   set_battery_friendly_charging = 40;
+    Common.Command         get_battery_friendly_charging = 41;
+  }
+}
+
+message ToMcuResponse {
+  /** Sequence number of the request this message is responding to. */
+  uint32 seq = 1;
+
+  option (nanopb_msgopt).submsg_callback = true;
+  oneof Response {
+    /** Start of system responses. */
+    Common.Result                        soft_reset = 10;
+    System.FirmwareVersion               get_firmware_version = 11;
+    Common.Result                        set_power_state = 12;
+    /** Start of audio responses. */
+    Common.Result                        set_volume = 22;
+    Common.Result                        send_playback_action = 31;
+    Common.Result                        cycle_source = 53;
+  }
+}
+
+message ToMcuEvent {
+  option (nanopb_msgopt).submsg_callback = true;
+  oneof Event {
+    /** Start of system events. */
+    /** Event signalling that the application has initialized successfully and is ready to receive requests. */
+    Common.Command                          notify_system_ready = 10;
+    System.PowerState                       notify_power_state = 11;
+
+    /** Start of audio events. */
+    bool                                    notify_stream_state = 22;
+    Rpi.Host.Source                         notify_host_source = 24;
+
+    /** Start of LED events. */
+    Rpi.Leds.PlayLedPattern                 notify_play_led_pattern = 25;
+    
+    /** WiFi connection info. */
+    Rpi.Host.WiFiConnectInfo                notify_wifi_info = 26;
+    Rpi.Host.WiFiCommandResult              notify_wifi_command_result = 27;
+  }
+}

@@ -77,11 +77,12 @@ struct tas5825p_handler
     uint8_t                 i2c_device_address;
 };
 
-static int set_dsp_memory_to_book_and_page(const tas5825p_handler_t *h, uint8_t book, uint8_t page);
-static int tas5825p_read_register(const tas5825p_handler_t *h, uint8_t register_address, uint8_t *p_data);
-static int tas5825p_write_register(const tas5825p_handler_t *h, uint8_t register_address, uint8_t value);
-static int tas5825p_modify_register(const tas5825p_handler_t *h, uint8_t register_address, uint8_t bitmask,
-                                    uint8_t value);
+static int           set_dsp_memory_to_book_and_page(const tas5825p_handler_t *h, uint8_t book, uint8_t page);
+static int           tas5825p_read_register(const tas5825p_handler_t *h, uint8_t register_address, uint8_t *p_data);
+static int           tas5825p_write_register(const tas5825p_handler_t *h, uint8_t register_address, uint8_t value);
+static int           tas5825p_modify_register(const tas5825p_handler_t *h, uint8_t register_address, uint8_t bitmask,
+                                              uint8_t value);
+static tas5825p_fs_t tas5825p_decode_fs_code(uint8_t raw_fs_code);
 
 tas5825p_handler_t *tas5825p_init(const tas5825p_config_t *p_config)
 {
@@ -191,7 +192,7 @@ int tas5825p_enable_eq(const tas5825p_handler_t *h, bool enable)
     }
 
     uint8_t data[4] = {0};
-    data[3] = (enable ? 0x00 : 0x01);
+    data[3]         = (enable ? 0x00 : 0x01);
     if (h->i2c_write_fn(h->i2c_device_address, 0x2C, data, sizeof(data)) != 0)
     {
         return -E_TAS5825P_IO;
@@ -231,8 +232,8 @@ int tas5825p_set_gpio_mode(const tas5825p_handler_t *h, tas5825p_gpio_t gpio, ta
         return -E_TAS5825P_IO;
     }
 
-    uint8_t register_address = TAS5825P_REG_GPIO0_SEL + (uint8_t)gpio;
-    return tas5825p_write_register(h, register_address, (uint8_t)mode);
+    uint8_t register_address = TAS5825P_REG_GPIO0_SEL + (uint8_t) gpio;
+    return tas5825p_write_register(h, register_address, (uint8_t) mode);
 }
 
 int tas5825p_set_gpio_output_level(const tas5825p_handler_t *h, tas5825p_gpio_t gpio, bool high)
@@ -242,8 +243,8 @@ int tas5825p_set_gpio_output_level(const tas5825p_handler_t *h, tas5825p_gpio_t 
         return -E_TAS5825P_IO;
     }
 
-    uint8_t bitmask = (1 << (uint8_t)gpio);
-    uint8_t value = (high ? bitmask : 0);
+    uint8_t bitmask = (1 << (uint8_t) gpio);
+    uint8_t value   = (high ? bitmask : 0);
     return tas5825p_modify_register(h, TAS5825P_REG_GPIO_OUT, bitmask, value);
 }
 
@@ -260,6 +261,7 @@ int tas5825p_clear_analog_fault(const tas5825p_handler_t *h)
 int tas5825p_recover_dc_fake_fault(const tas5825p_handler_t *h)
 {
     const uint8_t command_seq[][2] = {
+        // clang-format off
         {0x00, 0x00},
         {0x7F, 0x00},
         {0x7E, 0xFF},
@@ -271,6 +273,7 @@ int tas5825p_recover_dc_fake_fault(const tas5825p_handler_t *h)
         {0x00, 0x00},
         {0x7E, 0x52},
         {0x7D, 0x00},
+        // clang-format on
     };
     const uint8_t command_seq_len = sizeof(command_seq) / sizeof(command_seq[0]);
 
@@ -336,4 +339,42 @@ static int set_dsp_memory_to_book_and_page(const tas5825p_handler_t *h, uint8_t 
 
     // Now that we are in the right book, change to the wished page
     return tas5825p_write_register(h, 0x00, page);
+}
+
+int tas5825p_read_fs_mon(const tas5825p_handler_t *h, tas5825p_fs_t *p_fs)
+{
+    if (p_fs == NULL)
+    {
+        return -E_TAS5825P_PARAM;
+    }
+    if (set_dsp_memory_to_book_and_page(h, 0x00, 0x00) != 0)
+    {
+        return -E_TAS5825P_IO;
+    }
+    uint8_t raw_value;
+    int     ret = tas5825p_read_register(h, TAS5825P_REG_FS_MON, &raw_value);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    *p_fs = tas5825p_decode_fs_code(raw_value & 0x0F);
+    return 0;
+}
+
+static tas5825p_fs_t tas5825p_decode_fs_code(uint8_t raw_fs_code)
+{
+    switch (raw_fs_code)
+    {
+        case TAS5825P_FS_ERROR:
+        case TAS5825P_FS_16KHZ:
+        case TAS5825P_FS_32KHZ:
+        case TAS5825P_FS_48KHZ:
+        case TAS5825P_FS_96KHZ:
+        case TAS5825P_FS_192KHZ:
+            return (tas5825p_fs_t) raw_fs_code;
+        default:
+            // Map unknown and reserved FS codes to error
+            return TAS5825P_FS_ERROR;
+    }
 }

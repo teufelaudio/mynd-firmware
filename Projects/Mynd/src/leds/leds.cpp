@@ -1,4 +1,4 @@
-#define LOG_LEVEL LOG_LEVEL_INFO
+#define LOG_LEVEL LOG_LEVEL_WARNING
 #include "leds.h"
 #include "ux/bluetooth/bluetooth.h"
 #include "pattern/generic_rgb/generic_rgb.h"
@@ -351,7 +351,8 @@ static inline bool is_long_pattern(PatternId p)
            p == PatternId::MoistureDetected ||
            p == PatternId::CSBMasterConnected ||
            p == PatternId::SlaveChainConnected ||
-           p == PatternId::BTDfu;
+           p == PatternId::BTDfu
+           ;
     // clang-format on
 }
 
@@ -548,6 +549,11 @@ void run_engines()
 void set_solid_color(Led led, Color color)
 {
     const auto [r, g, b] = get_rgb(color);
+    set_solid_rgb(led, r, g, b);
+}
+
+void set_solid_rgb(Led led, uint8_t r, uint8_t g, uint8_t b)
+{
     log_debug("Set led %d: RGB(%d %d %d)", led, r, g, b);
 
     switch (led)
@@ -620,7 +626,7 @@ void set_source_pattern(SourcePattern pattern)
                 s_source_led_engine.run_inf_with_preload(s_usb_connected, s_usb_connected_ramp_up);
             break;
         case SourcePattern::PositiveFeedback:
-            s_source_led_engine.run_once(s_positive_feedback);
+            s_source_led_engine.run_once_with_preload(s_positive_feedback, s_off_before_blink);
             break;
         case SourcePattern::EcoModeOn:
             s_source_led_engine.run_once_transient(s_eco_mode);
@@ -797,7 +803,7 @@ static void set_brightness_pattern(uint8_t brightness)
 #else
     IndicationEngine::FillLookUpTable(cubic_curve_up, s_pulse_up_table, 0.f, 1.f, brightness);
     IndicationEngine::FillLookUpTable(cubic_curve_down, s_pulse_down_table, 0.f, 1.f, brightness);
-#endif
+#endif // BOARD_CONFIG_LED_RGB
 }
 
 void set_brightness(uint8_t brightness)

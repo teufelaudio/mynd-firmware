@@ -69,13 +69,13 @@ set(CMAKE_RANLIB "${TOOLCHAIN_BIN_DIR}/${TARGET_TRIPLET}-gcc-ranlib${TOOL_EXECUT
 # every make call to run git describe, get current version and update gitversion.h.
 # To enable this option gitversion.h MUST be added as dependency into ADD_EXECUTABLE function.
 function(GITVERSION_ENABLE TARGET)
-    target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR})
+    target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
     add_custom_command(
         OUTPUT gitversion.h
         COMMAND ${CMAKE_COMMAND}
         -Droot_dir="${CMAKE_SOURCE_DIR}"
-        -Dbin_dir="${CMAKE_BINARY_DIR}"
+        -Dbin_dir="${CMAKE_CURRENT_BINARY_DIR}"
         -P "${CMAKE_SOURCE_DIR}/support/cmake/gitversion.cmake"
     )
 
@@ -84,9 +84,9 @@ function(GITVERSION_ENABLE TARGET)
     add_custom_target(GITVERSION_${TARGET} DEPENDS "gitversion.h")
     add_dependencies(${TARGET} GITVERSION_${TARGET})
 
-if(EXISTS ${CMAKE_BINARY_DIR}/gitversion.h)
+if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/gitversion.h)
     # Set target's parameter VERSION, which can be used from the Project's cmake.
-    file(READ "${CMAKE_BINARY_DIR}/gitversion.h" gitversionfile)
+    file(READ "${CMAKE_CURRENT_BINARY_DIR}/gitversion.h" gitversionfile)
     string(REGEX MATCH "#define VERSION_MAJOR ([0-9]*)" VERS_MAJ ${gitversionfile})
     if(VERS_MAJ)
         set(V_MAJ ${CMAKE_MATCH_1})

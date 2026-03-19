@@ -1,6 +1,16 @@
 # MYND changelog
 
 ## [Unreleased]
+### Added
+- RPi modification that removes Actions BT code and physical module, replaces it with RPi Zero 2 W running Moode OS (OAM-1222, OAM-1226)
+
+## [1.5.0] - 2025-09-05
+### Fixed
+- Disable standby timer when BT module in the DFU state (OAM-1210)
+- Initial charge type and charge current (OAM-1215)
+- Set EQ (bass/treble) after boot up (OAM-1221)
+
+## [1.4.0] - 2025-04-07
 ### Fixed
 - Power consumption(must be below 0.5W) when the battery is fully charged (OAM-1200)
 

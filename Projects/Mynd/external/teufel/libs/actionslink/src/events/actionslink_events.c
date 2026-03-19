@@ -12,6 +12,18 @@ static void on_notify_power_state(const ActionsLink_ToMcuEvent *p_event);
 static void on_notify_audio_source(const ActionsLink_ToMcuEvent *p_event);
 static void on_notify_volume(const ActionsLink_ToMcuEvent *p_event);
 static void on_notify_stream_state(const ActionsLink_ToMcuEvent *p_event);
+#ifdef ActionsLink_ToMcuEvent_notify_host_source_tag
+static void on_notify_host_source(const ActionsLink_ToMcuEvent *p_event);
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_play_led_pattern_tag
+static void on_notify_play_led_pattern(const ActionsLink_ToMcuEvent *p_event);
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_wifi_info_tag
+static void on_notify_wifi_info(const ActionsLink_ToMcuEvent *p_event);
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_wifi_command_result_tag
+static void on_notify_wifi_command_result(const ActionsLink_ToMcuEvent *p_event);
+#endif
 static void on_notify_bt_a2dp_data(const ActionsLink_ToMcuEvent *p_event);
 static void on_notify_bt_avrcp_state(const ActionsLink_ToMcuEvent *p_event);
 static void on_notify_bt_avrcp_track_changed(const ActionsLink_ToMcuEvent *p_event);
@@ -21,14 +33,13 @@ static void on_notify_bt_disconnection(const ActionsLink_ToMcuEvent *p_event);
 static void on_notify_bt_device_paired(const ActionsLink_ToMcuEvent *p_event);
 static void on_notify_bt_pairing_state(const ActionsLink_ToMcuEvent *p_event);
 static void on_notify_bt_connection_state(const ActionsLink_ToMcuEvent *p_event);
-#ifdef INCLUDE_TWS_MODE
+#ifdef ActionsLink_ToMcuEvent_notify_tws_connection_state_tag
 static void on_notify_tws_connection_state(const ActionsLink_ToMcuEvent *p_event);
-#endif // INCLUDE_TWS_MODE
+#endif
 static void on_notify_csb_receiver_connection_state(const ActionsLink_ToMcuEvent *p_event);
 static void on_notify_usb_connection(const ActionsLink_ToMcuEvent *p_event);
 static void on_notify_dfu_mode(const ActionsLink_ToMcuEvent *p_event);
 static void on_app_packet(const ActionsLink_ToMcuEvent *p_event, const uint8_t *p_data, uint16_t data_length);
-
 
 void actionslink_events_init(const actionslink_event_handlers_t *p_event_handlers)
 {
@@ -45,88 +56,128 @@ void actionslink_event_handler(const ActionsLink_ToMcuEvent *p_event, const uint
 {
     switch (p_event->which_Event)
     {
+#ifdef ActionsLink_ToMcuEvent_notify_system_ready_tag
         case ActionsLink_ToMcuEvent_notify_system_ready_tag:
             on_notify_system_ready();
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_power_state_tag
         case ActionsLink_ToMcuEvent_notify_power_state_tag:
             on_notify_power_state(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_audio_source_tag
         case ActionsLink_ToMcuEvent_notify_audio_source_tag:
             on_notify_audio_source(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_volume_tag
         case ActionsLink_ToMcuEvent_notify_volume_tag:
             on_notify_volume(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_stream_state_tag
         case ActionsLink_ToMcuEvent_notify_stream_state_tag:
             on_notify_stream_state(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_host_source_tag
+        case ActionsLink_ToMcuEvent_notify_host_source_tag:
+            on_notify_host_source(p_event);
+            break;
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_play_led_pattern_tag
+        case ActionsLink_ToMcuEvent_notify_play_led_pattern_tag:
+            on_notify_play_led_pattern(p_event);
+            break;
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_wifi_info_tag
+        case ActionsLink_ToMcuEvent_notify_wifi_info_tag:
+            on_notify_wifi_info(p_event);
+            break;
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_wifi_command_result_tag
+        case ActionsLink_ToMcuEvent_notify_wifi_command_result_tag:
+            on_notify_wifi_command_result(p_event);
+            break;
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_a2dp_data_tag
         case ActionsLink_ToMcuEvent_notify_bt_a2dp_data_tag:
             on_notify_bt_a2dp_data(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_avrcp_state_tag
         case ActionsLink_ToMcuEvent_notify_bt_avrcp_state_tag:
             on_notify_bt_avrcp_state(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_avrcp_track_changed_tag
         case ActionsLink_ToMcuEvent_notify_bt_avrcp_track_changed_tag:
             on_notify_bt_avrcp_track_changed(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_avrcp_track_position_changed_tag
         case ActionsLink_ToMcuEvent_notify_bt_avrcp_track_position_changed_tag:
             on_notify_bt_avrcp_track_position_changed(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_connection_tag
         case ActionsLink_ToMcuEvent_notify_bt_connection_tag:
             on_notify_bt_connection(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_disconnection_tag
         case ActionsLink_ToMcuEvent_notify_bt_disconnection_tag:
             on_notify_bt_disconnection(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_device_paired_tag
         case ActionsLink_ToMcuEvent_notify_bt_device_paired_tag:
             on_notify_bt_device_paired(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_pairing_state_tag
         case ActionsLink_ToMcuEvent_notify_bt_pairing_state_tag:
             on_notify_bt_pairing_state(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_connection_state_tag
         case ActionsLink_ToMcuEvent_notify_bt_connection_state_tag:
             on_notify_bt_connection_state(p_event);
             break;
-#ifdef INCLUDE_TWS_MODE
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_tws_connection_state_tag
         case ActionsLink_ToMcuEvent_notify_tws_connection_state_tag:
             on_notify_tws_connection_state(p_event);
             break;
-#endif // INCLUDE_TWS_MODE
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_csb_state_tag
         case ActionsLink_ToMcuEvent_notify_csb_state_tag:
             on_notify_csb_receiver_connection_state(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_usb_connected_tag
         case ActionsLink_ToMcuEvent_notify_usb_connected_tag:
             on_notify_usb_connection(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_dfu_mode_tag
         case ActionsLink_ToMcuEvent_notify_dfu_mode_tag:
             on_notify_dfu_mode(p_event);
             break;
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_app_packet_tag
         case ActionsLink_ToMcuEvent_app_packet_tag:
             on_app_packet(p_event, p_data, data_length);
             break;
-
+#endif
         default:
             log_warning("event: unknown event %d", p_event->which_Event);
             break;
     }
 }
 
+#ifdef ActionsLink_ToMcuEvent_notify_system_ready_tag
 static void on_notify_system_ready(void)
 {
     log_debug("event: system ready");
@@ -137,7 +188,9 @@ static void on_notify_system_ready(void)
         mp_handlers->on_notify_system_ready();
     }
 }
+#endif
 
+#ifdef ActionsLink_ToMcuEvent_notify_power_state_tag
 static void on_notify_power_state(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: power state");
@@ -156,13 +209,17 @@ static void on_notify_power_state(const ActionsLink_ToMcuEvent *p_event)
             case ActionsLink_System_PowerState_SystemPowerMode_STANDBY:
                 mp_handlers->on_notify_power_state(ACTIONSLINK_POWER_STATE_STANDBY);
                 break;
+            case ActionsLink_System_PowerState_SystemPowerMode_SHUTDOWN_REQUEST:
+                mp_handlers->on_notify_power_state(ACTIONSLINK_POWER_STATE_SHUTDOWN_REQUEST);
+                break;
             default:
                 log_debug("invalid power state %d", p_power_state_event->mode);
                 break;
         }
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_audio_source_tag
 static void on_notify_audio_source(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: audio source");
@@ -190,7 +247,8 @@ static void on_notify_audio_source(const ActionsLink_ToMcuEvent *p_event)
         }
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_volume_tag
 static void on_notify_volume(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: volume");
@@ -221,7 +279,8 @@ static void on_notify_volume(const ActionsLink_ToMcuEvent *p_event)
         mp_handlers->on_notify_volume(&volume);
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_stream_state_tag
 static void on_notify_stream_state(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: stream state");
@@ -232,7 +291,118 @@ static void on_notify_stream_state(const ActionsLink_ToMcuEvent *p_event)
         mp_handlers->on_notify_stream_state(is_streaming);
     }
 }
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_host_source_tag
+static void on_notify_host_source(const ActionsLink_ToMcuEvent *p_event)
+{
+    log_debug("event: host source");
 
+    if (mp_handlers->on_notify_host_source)
+    {
+        actionslink_host_source_t source = (actionslink_host_source_t) p_event->Event.notify_host_source;
+        mp_handlers->on_notify_host_source(source);
+    }
+}
+#endif
+
+#ifdef ActionsLink_ToMcuEvent_notify_play_led_pattern_tag
+static void on_notify_play_led_pattern(const ActionsLink_ToMcuEvent *p_event)
+{
+    log_debug("event: play led pattern");
+
+    if (mp_handlers->on_notify_play_led_pattern)
+    {
+        actionslink_led_pattern_t pattern = (actionslink_led_pattern_t) p_event->Event.notify_play_led_pattern.pattern;
+        mp_handlers->on_notify_play_led_pattern(pattern);
+    }
+}
+#endif
+
+#ifdef ActionsLink_ToMcuEvent_notify_wifi_info_tag
+static void on_notify_wifi_info(const ActionsLink_ToMcuEvent *p_event)
+{
+    log_debug("event: wifi info");
+
+    if (mp_handlers->on_notify_wifi_info)
+    {
+        mp_handlers->on_notify_wifi_info(
+            p_event->Event.notify_wifi_info.ssid,
+            p_event->Event.notify_wifi_info.ip_address,
+            p_event->Event.notify_wifi_info.username
+        );
+    }
+}
+#endif
+
+#ifdef ActionsLink_ToMcuEvent_notify_wifi_command_result_tag
+static void on_notify_wifi_command_result(const ActionsLink_ToMcuEvent *p_event)
+{
+    log_debug("event: wifi command result");
+
+    if (mp_handlers->on_notify_wifi_command_result)
+    {
+        const ActionsLink_Rpi_Host_WiFiCommandResult *p_result =
+            &p_event->Event.notify_wifi_command_result;
+        actionslink_wifi_command_action_t action = ACTIONSLINK_WIFI_COMMAND_ACTION_UNKNOWN;
+        actionslink_error_t               status = ACTIONSLINK_ERROR_OPERATION_FAILED;
+        actionslink_wifi_command_detail_t detail = ACTIONSLINK_WIFI_COMMAND_DETAIL_NONE;
+
+        switch (p_result->action_type)
+        {
+            case ActionsLink_Rpi_Host_WiFiCommandResult_ActionType_ACTION_TYPE_CONFIGURE_WIFI:
+                action = ACTIONSLINK_WIFI_COMMAND_ACTION_CONFIGURE_WIFI;
+                break;
+            case ActionsLink_Rpi_Host_WiFiCommandResult_ActionType_ACTION_TYPE_ENABLE_HOTSPOT:
+                action = ACTIONSLINK_WIFI_COMMAND_ACTION_ENABLE_HOTSPOT;
+                break;
+            case ActionsLink_Rpi_Host_WiFiCommandResult_ActionType_ACTION_TYPE_CYCLE_WIFI_NETWORK:
+                action = ACTIONSLINK_WIFI_COMMAND_ACTION_CYCLE_WIFI_NETWORK;
+                break;
+            default:
+                break;
+        }
+
+        switch (p_result->status.status.code)
+        {
+            case ActionsLink_Error_Code_Success:
+                status = ACTIONSLINK_ERROR_SUCCESS;
+                break;
+            case ActionsLink_Error_Code_OperationFailed:
+                status = ACTIONSLINK_ERROR_OPERATION_FAILED;
+                break;
+            case ActionsLink_Error_Code_OperationCanceled:
+                status = ACTIONSLINK_ERROR_OPERATION_CANCELED;
+                break;
+            case ActionsLink_Error_Code_OperationNotSupported:
+                status = ACTIONSLINK_ERROR_OPERATION_NOT_SUPPORTED;
+                break;
+            case ActionsLink_Error_Code_ResourceUnavailable:
+                status = ACTIONSLINK_ERROR_RESOURCE_UNAVAILABLE;
+                break;
+            default:
+                break;
+        }
+
+        switch (p_result->detail)
+        {
+            case ActionsLink_Rpi_Host_WiFiCommandResult_Detail_DETAIL_BUSY:
+                detail = ACTIONSLINK_WIFI_COMMAND_DETAIL_BUSY;
+                break;
+            default:
+                break;
+        }
+
+        mp_handlers->on_notify_wifi_command_result(
+            p_result->command_id,
+            action,
+            status,
+            p_result->target_reached,
+            detail);
+    }
+}
+#endif
+
+#ifdef ActionsLink_ToMcuEvent_notify_bt_a2dp_data_tag
 static void on_notify_bt_a2dp_data(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: bt a2dp data");
@@ -274,7 +444,8 @@ static void on_notify_bt_a2dp_data(const ActionsLink_ToMcuEvent *p_event)
         mp_handlers->on_notify_bt_a2dp_data(&a2dp_data);
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_avrcp_state_tag
 static void on_notify_bt_avrcp_state(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: bt avrcp state");
@@ -302,7 +473,8 @@ static void on_notify_bt_avrcp_state(const ActionsLink_ToMcuEvent *p_event)
         mp_handlers->on_notify_bt_avrcp_state(avrcp_state);
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_avrcp_track_changed_tag
 static void on_notify_bt_avrcp_track_changed(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: avrcp track changed");
@@ -313,7 +485,8 @@ static void on_notify_bt_avrcp_track_changed(const ActionsLink_ToMcuEvent *p_eve
         mp_handlers->on_notify_bt_avrcp_track_changed(p_avrcp_event->track_id);
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_avrcp_track_position_changed_tag
 static void on_notify_bt_avrcp_track_position_changed(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: bt avrcp track position changed");
@@ -324,7 +497,8 @@ static void on_notify_bt_avrcp_track_position_changed(const ActionsLink_ToMcuEve
         mp_handlers->on_notify_bt_avrcp_track_position_changed(p_avrcp_event->ms_since_start);
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_connection_tag
 static void on_notify_bt_connection(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: bt connection");
@@ -338,7 +512,8 @@ static void on_notify_bt_connection(const ActionsLink_ToMcuEvent *p_event)
         }
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_disconnection_tag
 static void on_notify_bt_disconnection(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: bt disconnection");
@@ -366,7 +541,8 @@ static void on_notify_bt_disconnection(const ActionsLink_ToMcuEvent *p_event)
         }
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_device_paired_tag
 static void on_notify_bt_device_paired(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: bt device paired");
@@ -380,7 +556,8 @@ static void on_notify_bt_device_paired(const ActionsLink_ToMcuEvent *p_event)
         }
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_pairing_state_tag
 static void on_notify_bt_pairing_state(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: bt pairing state");
@@ -396,7 +573,7 @@ static void on_notify_bt_pairing_state(const ActionsLink_ToMcuEvent *p_event)
             case ActionsLink_Bluetooth_PairingState_PairingType_BT_PAIRING:
                 pairing_state = ACTIONSLINK_BT_PAIRING_STATE_BT_PAIRING;
                 break;
-#ifdef INCLUDE_TWS_MODE
+#ifdef ActionsLink_FromMcuRequest_notify_tws_connection_state_tag
             case ActionsLink_Bluetooth_PairingState_PairingType_TWS_MASTER_PAIRING:
                 pairing_state = ACTIONSLINK_BT_PAIRING_STATE_TWS_MASTER_PAIRING;
                 break;
@@ -406,7 +583,7 @@ static void on_notify_bt_pairing_state(const ActionsLink_ToMcuEvent *p_event)
             case ActionsLink_Bluetooth_PairingState_PairingType_TWS_AUTO :
                 pairing_state = ACTIONSLINK_BT_PAIRING_STATE_TWS_AUTO;
                 break;
-#endif // INCLUDE_TWS_MODE
+#endif
             case ActionsLink_Bluetooth_PairingState_PairingType_CSB_AUTO:
                 pairing_state = ACTIONSLINK_BT_PAIRING_STATE_CSB_AUTO;
                 break;
@@ -423,7 +600,8 @@ static void on_notify_bt_pairing_state(const ActionsLink_ToMcuEvent *p_event)
         mp_handlers->on_notify_bt_pairing_state(pairing_state);
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_bt_connection_state_tag
 static void on_notify_bt_connection_state(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: bt connection state");
@@ -447,8 +625,8 @@ static void on_notify_bt_connection_state(const ActionsLink_ToMcuEvent *p_event)
         mp_handlers->on_notify_bt_connection_state(is_connected);
     }
 }
-
-#ifdef INCLUDE_TWS_MODE
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_tws_connection_state_tag
 static void on_notify_tws_connection_state(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: tws connection state");
@@ -475,8 +653,8 @@ static void on_notify_tws_connection_state(const ActionsLink_ToMcuEvent *p_event
         mp_handlers->on_notify_tws_connection_state(state);
     }
 }
-#endif // INCLUDE_TWS_MODE
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_csb_state_tag
 static void on_notify_csb_receiver_connection_state(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: csb receiver connection state");
@@ -523,7 +701,8 @@ static void on_notify_csb_receiver_connection_state(const ActionsLink_ToMcuEvent
         mp_handlers->on_notify_csb_state(csb_state, csb_disconnect_reason);
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_usb_connected_tag
 static void on_notify_usb_connection(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: usb connection");
@@ -533,7 +712,8 @@ static void on_notify_usb_connection(const ActionsLink_ToMcuEvent *p_event)
         mp_handlers->on_notify_usb_connected(p_event->Event.notify_usb_connected);
     }
 }
-
+#endif
+#ifdef ActionsLink_ToMcuEvent_notify_dfu_mode_tag
 static void on_notify_dfu_mode(const ActionsLink_ToMcuEvent *p_event)
 {
     log_debug("event: dfu mode");
@@ -543,7 +723,7 @@ static void on_notify_dfu_mode(const ActionsLink_ToMcuEvent *p_event)
         mp_handlers->on_notify_dfu_mode(p_event->Event.notify_dfu_mode);
     }
 }
-
+#endif
 static void on_app_packet(const ActionsLink_ToMcuEvent *p_event, const uint8_t *p_data, uint16_t data_length)
 {
     log_debug("event: app packet");

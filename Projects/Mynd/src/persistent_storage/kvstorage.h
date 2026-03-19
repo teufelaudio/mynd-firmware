@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef INCLUDE_PRODUCTION_TESTS
-#include <unordered_map>
-#include "external/teufel/libs/tshell/tshell.h"
-#endif // INCLUDE_PRODUCTION_TEST
 #include <optional>
 #include <variant>
 #include "logger.h"
@@ -57,6 +53,11 @@ inline void init()
 template <typename T>
 constexpr std::optional<T> load()
 {
+    if constexpr (std::is_same_v<T, Teufel::Ux::System::ChargeType>)
+    {
+        /* According to the spec, the charge type should be always BatteryFriendly after reboot. */
+        return Teufel::Ux::System::ChargeType::BatteryFriendly;
+    }
     if constexpr (std::is_same_v<T, Teufel::Ux::System::BatterySoCAlgoState>)
     {
         uint16_t cell_value;

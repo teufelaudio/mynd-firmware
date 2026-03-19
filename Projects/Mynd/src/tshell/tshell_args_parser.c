@@ -6,11 +6,11 @@
 #include "tshell_args_parser.h"
 
 // Generic function
-static int tshell_parse_args_long(size_t argc, char **argv, long *result)
+static int tshell_parse_args_long(size_t argc, char** argv, long *result)
 {
-    (void) (argc);
-    const char *nptr   = argv[1];
-    char       *endptr = NULL;
+    (void)(argc);
+    const char *nptr = argv[1];
+    char *endptr = NULL;
 
     // if (min > max)
     // {
@@ -32,11 +32,11 @@ static int tshell_parse_args_long(size_t argc, char **argv, long *result)
     return 0;
 }
 
-static int tshell_parse_args_ulong(size_t argc, char **argv, unsigned long *result)
+static int tshell_parse_args_ulong(size_t argc, char** argv, unsigned long *result)
 {
-    (void) (argc);
-    const char *nptr   = argv[1];
-    char       *endptr = NULL;
+    (void)(argc);
+    const char *nptr = argv[1];
+    char *endptr = NULL;
 
     // if (min > max)
     // {
@@ -58,7 +58,7 @@ static int tshell_parse_args_ulong(size_t argc, char **argv, unsigned long *resu
     return 0;
 }
 
-int tshell_parse_args_uint8(size_t argc, char **argv, uint8_t min, uint8_t max, uint8_t *result)
+int tshell_parse_args_uint8(size_t argc, char** argv, uint8_t min, uint8_t max, uint8_t *result)
 {
     unsigned long parsed_long_value;
 
@@ -71,7 +71,7 @@ int tshell_parse_args_uint8(size_t argc, char **argv, uint8_t min, uint8_t max, 
         return -4;
     }
 
-    *result = (uint8_t) parsed_long_value;
+    *result = (uint8_t)parsed_long_value;
 
     if (*result < min || *result > max)
     {
@@ -82,7 +82,7 @@ int tshell_parse_args_uint8(size_t argc, char **argv, uint8_t min, uint8_t max, 
     return 0;
 }
 
-int tshell_parse_args_int8(size_t argc, char **argv, int8_t min, int8_t max, int8_t *result)
+int tshell_parse_args_int8(size_t argc, char** argv, int8_t min, int8_t max, int8_t *result)
 {
     long parsed_long_value;
 
@@ -95,7 +95,7 @@ int tshell_parse_args_int8(size_t argc, char **argv, int8_t min, int8_t max, int
         return -4;
     }
 
-    *result = (int8_t) parsed_long_value;
+    *result = (int8_t)parsed_long_value;
 
     if (*result < min || *result > max)
     {
@@ -106,7 +106,7 @@ int tshell_parse_args_int8(size_t argc, char **argv, int8_t min, int8_t max, int
     return 0;
 }
 
-int tshell_parse_args_uint32(size_t argc, char **argv, uint32_t min, uint32_t max, uint32_t *result)
+int tshell_parse_args_uint32(size_t argc, char** argv, uint32_t min, uint32_t max, uint32_t *result)
 {
     unsigned long parsed_long_value;
 
@@ -119,7 +119,7 @@ int tshell_parse_args_uint32(size_t argc, char **argv, uint32_t min, uint32_t ma
         return -4;
     }
 
-    *result = (uint32_t) parsed_long_value;
+    *result = (uint32_t)parsed_long_value;
 
     if (*result < min || *result > max)
     {
@@ -130,7 +130,7 @@ int tshell_parse_args_uint32(size_t argc, char **argv, uint32_t min, uint32_t ma
     return 0;
 }
 
-int tshell_parse_args_int32(size_t argc, char **argv, int32_t min, int32_t max, int32_t *result)
+int tshell_parse_args_int32(size_t argc, char** argv, int32_t min, int32_t max, int32_t *result)
 {
     long parsed_long_value;
 
@@ -143,7 +143,7 @@ int tshell_parse_args_int32(size_t argc, char **argv, int32_t min, int32_t max, 
         return -4;
     }
 
-    *result = (int32_t) parsed_long_value;
+    *result = (int32_t)parsed_long_value;
 
     if (*result < min || *result > max)
     {

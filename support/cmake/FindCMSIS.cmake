@@ -267,8 +267,10 @@ foreach(COMP ${CMSIS_FIND_COMPONENTS_FAMILIES})
             # target_sources(CMSIS::STM32::${TYPE}${CORE_C} INTERFACE "${CMSIS_${FAMILY}${CORE_U}_${TYPE}_STARTUP}")
         endif()
 
-        add_library(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE IMPORTED)
-        target_link_libraries(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE CMSIS::STM32::${TYPE}${CORE_C})
+        if(NOT (TARGET CMSIS::STM32::${DEVICE}${CORE_C}))
+            add_library(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE IMPORTED)
+            target_link_libraries(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE CMSIS::STM32::${TYPE}${CORE_C})
+        endif()
         # cmsis_generate_default_linker_script(${FAMILY} ${DEVICE} "${CORE}")
     endforeach()
 

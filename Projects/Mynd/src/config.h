@@ -20,7 +20,18 @@
 #define CONFIG_STANDBY_TIMER_MINS_DEFAULT          (10)
 
 #define CONFIG_MAX_AVRCP_VOLUME                    (127)
-#define CONFIG_DEFAULT_ABSOLUTE_AVRCP_VOLUME       ((127 * 40) / 100) // 40% of 127 avrcp max
+
+#if defined(MYND_RPI_MODIFICATION) && defined(HYBRID_VOLUME_MODE)
+// Volume table in tasxxxx_volume_table.c supports -90 to +10 dB.
+// 0 dB = unity gain (moderate). Positive dB = amplification (loud).
+// Empirically: -27 dB ≈ barely audible, -12 dB ≈ comfortable, 0 dB ≈ loud.
+#define CONFIG_HW_VOL_MIN_DB                       (-27)
+#define CONFIG_HW_VOL_MAX_DB                       (10)
+#define CONFIG_HW_VOL_STEP_AVRCP                   ((CONFIG_MAX_AVRCP_VOLUME * 1) / 100)    // 1% of 127
+#define CONFIG_DEFAULT_ABSOLUTE_AVRCP_VOLUME       ((CONFIG_MAX_AVRCP_VOLUME * 80) / 100) // 80% of 127 avrcp max
+#else
+#define CONFIG_DEFAULT_ABSOLUTE_AVRCP_VOLUME       ((CONFIG_MAX_AVRCP_VOLUME * 40) / 100) // 40% of 127 avrcp max
+#endif
 
 #define CONFIG_IDLE_POWER_OFF_TIMEOUT_MS_FACTOR    (60UL * 1000UL)
 #define CONFIG_MAX_IDLE_TIMEOUT_MINUTES            (254)

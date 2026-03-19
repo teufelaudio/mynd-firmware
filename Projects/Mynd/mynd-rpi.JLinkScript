@@ -1,0 +1,8 @@
+Device STM32F072RB
+si SWD
+speed 4000
+h
+#erase
+loadfile Projects/Mynd/mynd-rpi-mod.hex
+r
+q

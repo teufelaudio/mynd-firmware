@@ -2,6 +2,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "tas5805m.h"
+#include "tas5825p.h"
 
 typedef enum
 {
@@ -25,6 +27,8 @@ extern "C"
 
     void board_link_amps_enable(bool enable);
 
+    int board_link_amps_set_hi_z(void);
+
     int board_link_amps_setup_woofer(board_link_amps_mode_t mode);
 
     int board_link_amps_setup_tweeter(board_link_amps_mode_t mode);
@@ -45,6 +49,23 @@ extern "C"
      * @param[in] volume_db     volume in dB
      */
     void board_link_amps_set_volume(int8_t volume_db);
+
+#ifdef HYBRID_VOLUME_MODE
+    /**
+     * @brief Converts an AVRCP volume value (0-127) to a dB value.
+     *
+     * @param[in] avrcp_volume  AVRCP volume (0 = mute, 1-127 mapped to CONFIG_HW_VOL_MIN_DB..CONFIG_HW_VOL_MAX_DB)
+     * @return volume in dB
+     */
+    int8_t board_link_amps_avrcp_to_db(uint8_t avrcp_volume);
+
+    /**
+     * @brief Sets the digital volume control for both amps using an AVRCP volume value.
+     *
+     * @param[in] avrcp_volume  AVRCP volume (0-127)
+     */
+    void board_link_amps_set_volume_avrcp(uint8_t avrcp_volume);
+#endif
 
     /**
      * @brief Sets the bass level on the woofer amp.
@@ -94,6 +115,12 @@ extern "C"
     void board_link_amps_mute(bool enable);
 
     bool board_link_amps_is_muted(void);
+
+    void board_link_amps_toggle_mute(void);
+
+    int board_link_amps_read_fs_mon(tas5825p_fs_t *p_woofer_fs, tas5805m_fs_t *p_tweeter_fs);
+
+    bool board_link_amps_fs_ready(void);
 
     bool board_link_amps_woofer_fault_detected(void);
     void board_link_amps_woofer_fault_recover(void);

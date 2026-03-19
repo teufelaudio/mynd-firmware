@@ -15,34 +15,38 @@
 #include "stm32f0xx_ll_adc.h"
 
 #include <array>
-#include <algorithm>
 #include <utility>
+#include <algorithm>
 
-#include "logger.h"
 #include "charge_controller.h"
 #include "battery_indicator.h"
 #include "soc_estimator.h"
+#include "history/history.h"
 #include "board.h"
 #include "board_link_charger.h"
 #include "board_link_usb_pd_controller.h"
 #include "board_link_eeprom.h"
 #include "bsp_adc.h"
 
+#include "logger.h"
+#include "external/teufel/libs/property/property.h"
 #include "ux/system/system.h"
 
-#include "external/teufel/libs/property/property.h"
+#include "kvstorage.h"
+#include "task_system.h"
+#ifndef MYND_RPI_MODIFICATION
+#include "task_bluetooth.h"
+#else
+#include "task_rpi.h"
+#endif // NOT MYND_RPI_MODIFICATION
+#include "config.h"
 #include "external/teufel/libs/app_assert/app_assert.h"
+#include "external/teufel/libs/tshell/tshell.h"
 #include "external/teufel/libs/core_utils/ewma.h"
 #include "external/teufel/libs/core_utils/hysteresis.h"
 #include "external/teufel/libs/core_utils/misc.h"
 
-#include "config.h"
-#include "kvstorage.h"
-#include "task_system.h"
-#include "task_bluetooth.h"
 #include "temperature/temperature.h"
-
-#include "external/teufel/libs/tshell/tshell.h"
 
 // #define BATTERY_DEBUG 1
 
@@ -83,9 +87,9 @@ static StaticSemaphore_t sys_adc_buffer_mutex_buffer;
 
 static constexpr uint8_t c_bat_adc_voltage_divider_ratio = (10000 + 5000) / 5000;
 
-#ifdef INCLUDE_PRODUCTION_TESTS
+#if defined(INCLUDE_FACTORY_TESTS)
 static bool s_prev_charge_limit_state = false;
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif
 
 static struct
 {
@@ -131,6 +135,8 @@ static uint32_t battery_current_processing_time_ms;
 
 static SocEstimator soc_estimator{};
 
+static ::Battery::History battery_history{};
+
 void init()
 {
     soc_timer = xTimerCreateStatic(
@@ -175,6 +181,8 @@ void init()
     if (board_link_charger_setup() == 0)
     {
         s_battery.is_charger_initialized = true;
+        auto charge_type                 = getProperty<Tus::ChargeType>();
+        set_charge_type(charge_type);
     }
 
     bsp_adc_start((uint32_t *) s_adc_buffer, adc_buffer_size,
@@ -224,6 +232,7 @@ void set_power_state(const Tus::PowerState &state)
             board_link_charger_disable();
         }
     }
+
     battery_indicator.update_power_state(state, get_systick());
 }
 
@@ -293,7 +302,12 @@ static void monitor_battery_level()
         {
             setProperty(Tus::BatteryLevel{bl});
             battery_indicator.update_battery_level(bl, get_systick());
+#ifndef MYND_RPI_MODIFICATION
             Teufel::Task::Bluetooth::postMessage(Tus::Task::Audio, Tus::BatteryLevel{bl});
+#else
+            if (isProperty(Teufel::Ux::RpiLink::PowerState::On))
+                Teufel::Task::RpiLink::postMessage(Tus::Task::RpiLink, Tus::BatteryLevel{bl});
+#endif // NOT MYND_RPI_MODIFICATION
         }
 
         if (isProperty(Ux::System::PowerState::Off))
@@ -329,12 +343,16 @@ class ChargerLLController : public IChargerLLController
   public:
     void enable(bool bfc_enabled) override
     {
-        board_link_charger_enable_fast_charge(bfc_enabled);
-
         /* To comply with regulations, the MCU must adjust the charge voltage to 5V
          * once the battery reaches full charge or disabled. When the charging is active
          * we can request 20V. */
         board_link_usb_pd_controller_set_max_source_voltage(USB_PD_MAX_SOURCE_VOLTAGE_20V);
+
+        /* Select fast_charge/battery_friendly mode **after** PD controller applies the source voltage.
+         * Otherwise the current value in the charger can be overwritten. */
+        vTaskDelay(300);
+        bool fast_charge = !bfc_enabled;
+        board_link_charger_enable_fast_charge(fast_charge);
     }
     void disable() override
     {
@@ -368,14 +386,19 @@ static void monitor_charger_status()
 
     auto charger_state =
         charge_controller.process(s_battery.last_battery_voltage_mv, s_battery.last_battery_current,
-                                  is_charging_allowed, ac_plugged, isProperty(Tus::ChargeType::FastCharge));
+                                  is_charging_allowed, ac_plugged, isProperty(Tus::ChargeType::BatteryFriendly));
 
     if (not isProperty(charger_state))
     {
         setProperty(charger_state);
         battery_indicator.update_charger_status(charger_state);
+#ifndef MYND_RPI_MODIFICATION
         Teufel::Task::Bluetooth::postMessage(Tus::Task::Bluetooth, Tus::ChargerStatus{charger_state});
-        // log_info("charger status: %s", getDesc(charger_state));
+#else
+        if (isProperty(Teufel::Ux::RpiLink::PowerState::On))
+            Teufel::Task::RpiLink::postMessage(Tus::Task::RpiLink, Tus::ChargerStatus{charger_state});
+#endif // NOT MYND_RPI_MODIFICATION
+       // log_info("charger status: %s", getDesc(charger_state));
     }
 }
 
@@ -415,6 +438,7 @@ static void update_battery_temperature()
     }
 }
 
+#ifndef MYND_RPI_MODIFICATION
 static void check_charger_status_to_play_sound_icon()
 {
     static bool     is_charger_connected          = false;
@@ -438,6 +462,7 @@ static void check_charger_status_to_play_sound_icon()
         last_charger_status_update_ts = get_systick();
     }
 }
+#endif // NOT MYND_RPI_MODIFICATION
 
 static auto power_bank_in_low_battery_mode =
     hysteresis<CONFIG_POWER_BANK_LOW_BATTERY_THRESHOLD, CONFIG_POWER_BANK_LOW_BATTERY_RECOVERY_THRESHOLD>(
@@ -504,14 +529,16 @@ void poll()
         set_charge_type(charge_type);
     }
 
+#ifndef MYND_RPI_MODIFICATION
     check_charger_status_to_play_sound_icon();
+#endif // NOT MYND_RPI_MODIFICATION
 
     if (s_battery.is_battery_voltage_stable)
     {
         Teufel::Core::callOnce([]() { soc_estimator.init(s_battery.last_battery_voltage_mv); });
     }
 
-#ifdef INCLUDE_PRODUCTION_TESTS
+#if defined(INCLUDE_FACTORY_TESTS)
     bool update_charge_limit_mode = getProperty<Tus::ChargeLimitMode>().value != s_prev_charge_limit_state;
     if (update_charge_limit_mode && getProperty<Tus::BatteryLevel>().value > 70 &&
         isProperty(Tus::ChargerStatus::Active))
@@ -519,7 +546,7 @@ void poll()
         board_link_charger_disable_charging(getProperty<Tus::ChargeLimitMode>().value);
         s_prev_charge_limit_state = getProperty<Tus::ChargeLimitMode>().value;
     }
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif // INCLUDE_FACTORY_TESTS
 
     static int cnt = 1;
     if (cnt++ % 40 == 0)
@@ -540,20 +567,32 @@ void poll()
     auto psys_voltage = 3.3f * static_cast<float>(raw_psys_tmp) / 4096.f;
     auto system_power = static_cast<uint16_t>(psys_voltage * 32.25806f);
 #endif
+
+#ifdef BOARD_CONFIG_BATTERY_HISTORY_ENABLED
+    // Battery history record
+    auto            is_charging_active          = isProperty(Tus::ChargerStatus::Active);
+    auto            is_fast_charge_enabled      = isProperty(Tus::ChargeType::FastCharge);
+    static uint32_t last_battery_history_record = 0u;
+    if (board_get_ms_since(last_battery_history_record) > 500u)
+    {
+        last_battery_history_record = get_systick();
+        auto r =
+            ::Battery::History::Record{.system_power            = 42,
+                                       .power_in_out_of_battery = static_cast<int16_t>(s_battery.last_battery_current),
+                                       .battery_charge          = soc_estimator.get_battery_level(),
+                                       .status                  = 0x77};
+        battery_history.add_record(r);
+    }
+#endif
 }
 
 Ux::System::ChargeType toggle_fast_charging()
 {
-    auto charge_type = !board_link_charger_is_fast_charge_enabled() ? Ux::System::ChargeType::FastCharge
-                                                                    : Ux::System::ChargeType::BatteryFriendly;
+    auto charge_type = isProperty(Tus::ChargeType::FastCharge) ? Ux::System::ChargeType::BatteryFriendly
+                                                               : Ux::System::ChargeType::FastCharge;
+
     set_charge_type(charge_type);
     return charge_type;
-}
-
-Ux::System::ChargeType get_charge_type()
-{
-    bool enable_fast_charge = board_link_charger_is_fast_charge_enabled();
-    return enable_fast_charge ? Ux::System::ChargeType::FastCharge : Ux::System::ChargeType::BatteryFriendly;
 }
 
 void set_charge_type(const Ux::System::ChargeType &type)
@@ -566,7 +605,7 @@ void set_charge_type(const Ux::System::ChargeType &type)
     log_info("Fast charge %s", type == Ux::System::ChargeType::FastCharge ? "on" : "off");
 }
 
-#ifdef INCLUDE_PRODUCTION_TESTS
+#if defined(INCLUDE_FACTORY_TESTS)
 int8_t get_battery_temperature()
 {
     return s_battery.last_battery_temperature;
@@ -576,7 +615,7 @@ uint16_t get_battery_voltage_mv()
 {
     return s_battery.last_battery_voltage_mv;
 }
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif // INCLUDE_FACTORY_TESTS
 
 static float calculate_battery_current_milliamps(uint32_t vcc_mv, int32_t isns_ref, int32_t isns)
 {

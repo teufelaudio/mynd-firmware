@@ -1,8 +1,8 @@
 #pragma once
 
-#ifdef INCLUDE_PRODUCTION_TESTS
+#ifdef INCLUDE_FACTORY_TESTS
 #include <unordered_map>
-#endif // INCLUDE_PRODUCTION_TEST
+#endif // INCLUDE_FACTORY_TESTS
 #include <cstdint>
 #include <optional>
 
@@ -58,6 +58,9 @@ enum class Task : uint8_t
     Audio,
     Ui,
     Bluetooth,
+#ifdef MYND_RPI_MODIFICATION
+    RpiLink,
+#endif // MYND_RPI_MODIFICATION
 };
 
 inline auto getDesc(const Task &value)
@@ -72,6 +75,10 @@ inline auto getDesc(const Task &value)
             return "Ui";
         case Task::Bluetooth:
             return "Bluetooth";
+#ifdef MYND_RPI_MODIFICATION
+        case Task::RpiLink:
+            return "RpiLink";
+#endif // MYND_RPI_MODIFICATION
         default:
             return "Unknown";
     }
@@ -237,9 +244,9 @@ struct OffTimerEnabled { bool value; };
 struct FactoryResetRequest {};
 struct FactoryReset {};
 struct HardReset {};
-#ifdef INCLUDE_PRODUCTION_TESTS
+#if defined(INCLUDE_FACTORY_TESTS) || defined(MYND_RPI_MODIFICATION)
 struct ChargeLimitMode { bool value; };
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif
 
 struct BatterySocAccumulatedCharge { float value; };
 struct BatterySocCapacity { float value; };
@@ -313,8 +320,8 @@ OffTimer        getProperty(OffTimer *);
 OffTimerEnabled getProperty(OffTimerEnabled *);
 ChargerStatus   getProperty(ChargerStatus *);
 ChargeType      getProperty(ChargeType *);
-#ifdef INCLUDE_PRODUCTION_TESTS
+#if defined(INCLUDE_FACTORY_TESTS) || defined(MYND_RPI_MODIFICATION)
 ChargeLimitMode getProperty(ChargeLimitMode *);
 // BatteryTemperature getProperty(BatteryTemperature *);
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif
 }

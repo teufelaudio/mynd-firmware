@@ -4,6 +4,8 @@ package ActionsLink.Bluetooth;
 import "common.proto";
 import "error.proto";
 
+import "nanopb.proto";
+
 
 enum ChannelMode {
   /* Single mono channel. */
@@ -169,6 +171,7 @@ message PairedDeviceList {
  * Message to respond to a paired device list request.
  */
 message ResponsePairedDeviceList {
+  option (nanopb_msgopt).submsg_callback = true;
   oneof Result {
     PairedDeviceList list = 1;
     Error.Error error = 2;

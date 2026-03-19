@@ -103,7 +103,7 @@ struct StreamingActive { bool value; };
 struct NotifyAuxConnectionChange { bool connected; };
 struct NotifyUsbConnectionChange { bool connected; };
 struct EnterDfuMode {};
-#ifdef INCLUDE_PRODUCTION_TESTS
+#ifdef INCLUDE_FACTORY_TESTS
 struct FWVersionProdTest {};
 struct DeviceNameProdTest {};
 struct BtMacAddressProdTest {};
@@ -114,7 +114,7 @@ enum class AudioBypassProdTest: uint8_t {
     Enter,
     Exit,
 };
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif // INCLUDE_FACTORY_TESTS
 // clang-format on
 
 // Public API

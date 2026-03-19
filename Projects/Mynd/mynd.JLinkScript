@@ -2,7 +2,7 @@ Device STM32F072RB
 si SWD
 speed 4000
 h
-#erase
+erase
 loadfile Projects/Mynd/mynd.hex
 r
 q

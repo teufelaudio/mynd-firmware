@@ -1,0 +1,24 @@
+[Unit]
+Description=Mynd RPi Link Daemon - Communication bridge between Mynd MCU and Raspberry Pi
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+ExecStart=/usr/local/bin/mynd_rpi_link.py --config /etc/mynd_rpi_link.conf
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+# Note: NoNewPrivileges is disabled to allow sudo poweroff command
+# The service runs as non-root user and uses sudoers for controlled privilege escalation
+NoNewPrivileges=false
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+

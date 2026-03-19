@@ -23,7 +23,10 @@ static actionslink_driver_t m_actionslink;
 // Helper functions
 static bool        is_driver_ready(void);
 static const char *get_error_desc(ActionsLink_Error_Code error_code);
+#ifdef ActionsLink_ToMcuRequest_get_color_tag
 static ActionsLink_Eco_Device_Color to_pb_color(actionslink_device_color_t color);
+#endif
+
 
 int actionslink_init(const actionslink_config_t *p_config, const actionslink_event_handlers_t *p_event_handlers,
                      const actionslink_request_handlers_t *p_request_handlers)
@@ -171,6 +174,9 @@ int actionslink_set_power_state(actionslink_power_state_t power_state)
         case ACTIONSLINK_POWER_STATE_STANDBY:
             power_mode = ActionsLink_System_PowerState_SystemPowerMode_STANDBY;
             break;
+        case ACTIONSLINK_POWER_STATE_SHUTDOWN_REQUEST:
+            power_mode = ActionsLink_System_PowerState_SystemPowerMode_SHUTDOWN_REQUEST;
+            break;
         default:
             log_error("invalid power state %d", power_state);
             return -1;
@@ -193,6 +199,7 @@ int actionslink_set_power_state(actionslink_power_state_t power_state)
     return 0;
 }
 
+#ifdef ActionsLink_FromMcuRequest_enter_dfu_mode_tag
 int actionslink_enter_dfu_mode(void)
 {
     if (!is_driver_ready())
@@ -215,7 +222,134 @@ int actionslink_enter_dfu_mode(void)
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuEvent_notify_configure_wifi_command_tag
+int actionslink_send_configure_wifi_command(uint32_t command_id, const char *ssid, const char *password)
+{
+    if (!is_driver_ready())
+        return -1;
+
+    if (!ssid || strlen(ssid) == 0)
+    {
+        log_error("ssid cannot be null or empty");
+        return -1;
+    }
+
+    log_debug("send cfg WiFi cmd id=%lu ssid=%s",
+              (unsigned long) command_id, ssid);
+
+    ActionsLink_FromMcu message = ActionsLink_FromMcu_init_zero;
+    message.which_Payload = ActionsLink_FromMcu_event_tag;
+    message.Payload.event.which_Event = ActionsLink_FromMcuEvent_notify_configure_wifi_command_tag;
+    message.Payload.event.Event.notify_configure_wifi_command.command_id = command_id;
+
+    size_t ssid_len = strlen(ssid);
+    if (ssid_len >= sizeof(message.Payload.event.Event.notify_configure_wifi_command.config.ssid))
+    {
+        ssid_len = sizeof(message.Payload.event.Event.notify_configure_wifi_command.config.ssid) - 1;
+    }
+    strncpy(message.Payload.event.Event.notify_configure_wifi_command.config.ssid, ssid, ssid_len);
+    message.Payload.event.Event.notify_configure_wifi_command.config.ssid[ssid_len] = '\0';
+
+    if (password && strlen(password) > 0)
+    {
+        size_t password_len = strlen(password);
+        if (password_len >= sizeof(message.Payload.event.Event.notify_configure_wifi_command.config.password))
+        {
+            password_len = sizeof(message.Payload.event.Event.notify_configure_wifi_command.config.password) - 1;
+        }
+        strncpy(message.Payload.event.Event.notify_configure_wifi_command.config.password,
+                password,
+                password_len);
+        message.Payload.event.Event.notify_configure_wifi_command.config.password[password_len] = '\0';
+    }
+
+    ActionsLink_ToMcu response = ActionsLink_ToMcu_init_zero;
+    if (actionslink_bt_ul_tx_rx(&message, &response) != 0)
+    {
+        log_error("failed to send cfg WiFi cmd");
+        return -1;
+    }
+    return 0;
+}
+#endif
+
+#ifdef ActionsLink_FromMcuEvent_notify_enable_hotspot_command_tag
+int actionslink_send_enable_hotspot_command(uint32_t command_id)
+{
+    if (!is_driver_ready())
+        return -1;
+
+    log_debug("send hotspot cmd id=%lu", (unsigned long) command_id);
+
+    ActionsLink_FromMcu message = ActionsLink_FromMcu_init_zero;
+    message.which_Payload = ActionsLink_FromMcu_event_tag;
+    message.Payload.event.which_Event = ActionsLink_FromMcuEvent_notify_enable_hotspot_command_tag;
+    message.Payload.event.Event.notify_enable_hotspot_command.command_id = command_id;
+
+    ActionsLink_ToMcu response = ActionsLink_ToMcu_init_zero;
+    if (actionslink_bt_ul_tx_rx(&message, &response) != 0)
+    {
+        log_error("failed to send hotspot cmd");
+        return -1;
+    }
+    return 0;
+}
+#endif
+
+#ifdef ActionsLink_FromMcuEvent_notify_cycle_wifi_network_command_tag
+int actionslink_send_cycle_wifi_network_command(uint32_t command_id)
+{
+    if (!is_driver_ready())
+        return -1;
+
+    log_debug("send cycle WiFi cmd id=%lu", (unsigned long) command_id);
+
+    ActionsLink_FromMcu message = ActionsLink_FromMcu_init_zero;
+    message.which_Payload = ActionsLink_FromMcu_event_tag;
+    message.Payload.event.which_Event = ActionsLink_FromMcuEvent_notify_cycle_wifi_network_command_tag;
+    message.Payload.event.Event.notify_cycle_wifi_network_command.command_id = command_id;
+
+    ActionsLink_ToMcu response = ActionsLink_ToMcu_init_zero;
+    if (actionslink_bt_ul_tx_rx(&message, &response) != 0)
+    {
+        log_error("failed to send cycle WiFi cmd");
+        return -1;
+    }
+    return 0;
+}
+#endif
+
+#ifdef ActionsLink_FromMcuRequest_cycle_source_tag
+int actionslink_send_cycle_source_request(void)
+{
+    if (!is_driver_ready())
+        return -1;
+
+    log_debug("sending cycle source request");
+
+    ActionsLink_FromMcu message           = ActionsLink_FromMcu_init_zero;
+    message.which_Payload                 = ActionsLink_FromMcu_request_tag;
+    message.Payload.request.seq           = m_actionslink.next_sequence_id++;
+    message.Payload.request.which_Request = ActionsLink_FromMcuRequest_cycle_source_tag;
+
+    ActionsLink_ToMcu response = ActionsLink_ToMcu_init_zero;
+    if ((actionslink_bt_ul_tx_rx(&message, &response) != 0))
+    {
+        log_warning("Cycle source request sent, but response not received in time");
+    }
+    if (response.Payload.response.Response.cycle_source.status.code != ActionsLink_Error_Code_Success)
+    {
+        log_error("Cycle source unsuccessful: [%s]",
+                    get_error_desc(response.Payload.response.Response.cycle_source.status.code));
+        return -1;
+    }
+    return 0;
+}
+#endif
+
+#ifdef ActionsLink_FromMcuRequest_get_this_device_name_tag
 int actionslink_get_this_device_name(actionslink_buffer_dsc_t *p_buffer_dsc)
 {
     if (!is_driver_ready())
@@ -239,6 +373,7 @@ int actionslink_get_this_device_name(actionslink_buffer_dsc_t *p_buffer_dsc)
 
     return 0;
 }
+#endif
 
 int actionslink_get_bt_device_name(uint64_t address, actionslink_buffer_dsc_t *p_buffer_dsc)
 {
@@ -246,6 +381,7 @@ int actionslink_get_bt_device_name(uint64_t address, actionslink_buffer_dsc_t *p
     return -1;
 }
 
+#ifdef ActionsLink_FromMcuRequest_get_bt_mac_address_tag
 int actionslink_get_bt_mac_address(uint64_t *p_bt_mac_address)
 {
     if (!is_driver_ready())
@@ -268,7 +404,9 @@ int actionslink_get_bt_mac_address(uint64_t *p_bt_mac_address)
     *p_bt_mac_address = response.Payload.response.Response.get_bt_mac_address.address;
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuRequest_get_ble_mac_address_tag
 int actionslink_get_ble_mac_address(uint64_t *p_ble_mac_address)
 {
     if (!is_driver_ready())
@@ -291,7 +429,9 @@ int actionslink_get_ble_mac_address(uint64_t *p_ble_mac_address)
     *p_ble_mac_address = response.Payload.response.Response.get_ble_mac_address.address;
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuRequest_get_bt_rssi_value_tag
 int actionslink_get_bt_rssi_value(int8_t *p_bt_rssi_val)
 {
     if (!is_driver_ready())
@@ -314,13 +454,35 @@ int actionslink_get_bt_rssi_value(int8_t *p_bt_rssi_val)
     *p_bt_rssi_val = response.Payload.response.Response.get_bt_rssi_value.rssi;
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuRequest_get_bt_paired_device_list_tag
 int actionslink_get_bt_paired_device_list(actionslink_bt_paired_device_list_t *p_list)
 {
-    log_debug("get bt paired device list not implemented");
-    return -1;
-}
+    if (!is_driver_ready())
+        return -1;
 
+    log_debug("sending get this device name request");
+
+    ActionsLink_FromMcu message           = ActionsLink_FromMcu_init_zero;
+    message.which_Payload                 = ActionsLink_FromMcu_request_tag;
+    message.Payload.request.seq           = m_actionslink.next_sequence_id++;
+    message.Payload.request.which_Request = ActionsLink_FromMcuRequest_get_paired_device_list_tag;
+
+    ActionsLink_ToMcu response       = ActionsLink_ToMcu_init_zero;
+    response.cb_Payload.arg          = p_list;
+    response.cb_Payload.funcs.decode = actionslink_decode_to_mcu_message;
+    if (actionslink_bt_ul_tx_rx(&message, &response) != 0)
+    {
+        log_error("failed to get this device name");
+        return -1;
+    }
+
+    return 0;
+}
+#endif
+
+#ifdef  ActionsLink_FromMcuRequest_clear_bt_paired_device_list_tag
 int actionslink_clear_bt_paired_device_list(void)
 {
     if (!is_driver_ready())
@@ -343,7 +505,9 @@ int actionslink_clear_bt_paired_device_list(void)
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuRequest_disconnect_all_bt_devices_tag
 int actionslink_disconnect_all_bt_devices(void)
 {
     if (!is_driver_ready())
@@ -366,7 +530,9 @@ int actionslink_disconnect_all_bt_devices(void)
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuRequest_set_volume_tag
 static int control_volume(ActionsLink_Audio_VolumeControl_VolumeControlAction action)
 {
     if (!is_driver_ready())
@@ -400,7 +566,9 @@ int actionslink_decrease_volume(void)
 {
     return control_volume(ActionsLink_Audio_VolumeControl_VolumeControlAction_VOLUME_DOWN);
 }
+#endif
 
+#ifdef  ActionsLink_FromMcuRequest_set_absolute_avrcp_volume_tag
 int actionslink_set_bt_absolute_avrcp_volume(uint8_t avrcp_volume)
 {
     if (!is_driver_ready())
@@ -424,7 +592,10 @@ int actionslink_set_bt_absolute_avrcp_volume(uint8_t avrcp_volume)
     }
     return 0;
 }
+#endif
 
+#if defined(ActionsLink_FromMcuRequest_send_avrcp_action_tag)
+#ifdef ActionsLink_Bluetooth_AvrcpAction_init_default
 static int send_avrcp_command(ActionsLink_Bluetooth_AvrcpAction_Action action)
 {
     if (!is_driver_ready())
@@ -473,7 +644,52 @@ int actionslink_bt_previous_track(void)
 {
     return send_avrcp_command(ActionsLink_Bluetooth_AvrcpAction_Action_PREVIOUS_TRACK);
 }
+#endif // ActionsLink_Bluetooth_AvrcpAction_init_default
 
+#elif defined(ActionsLink_FromMcuRequest_send_playback_action_tag)
+#ifdef ActionsLink_Rpi_Host_PlaybackAction_init_default
+static int send_playback_command(ActionsLink_Rpi_Host_PlaybackAction_Action action)
+{
+    if (!is_driver_ready())
+        return -1;
+
+    log_debug("sending playback action command: %d", action);
+
+    ActionsLink_FromMcu message                              = ActionsLink_FromMcu_init_zero;
+    message.which_Payload                                    = ActionsLink_FromMcu_request_tag;
+    message.Payload.request.seq                              = m_actionslink.next_sequence_id++;
+    message.Payload.request.which_Request                    = ActionsLink_FromMcuRequest_send_playback_action_tag;
+    message.Payload.request.Request.send_playback_action.action = action;
+
+    ActionsLink_ToMcu response = ActionsLink_ToMcu_init_zero;
+    if ((actionslink_bt_ul_tx_rx(&message, &response) != 0) ||
+        (response.Payload.response.Response.send_playback_action.status.code != ActionsLink_Error_Code_Success))
+    {
+        log_error("failed to send playback action [%s]",
+                        get_error_desc(response.Payload.response.Response.send_playback_action.status.code));
+        return -1;
+    }
+    return 0;
+}
+
+int actionslink_host_play_pause(void)
+{
+    return send_playback_command(ActionsLink_Rpi_Host_PlaybackAction_Action_TOGGLE_PLAY_PAUSE);
+}
+
+int actionslink_host_next_track(void)
+{
+    return send_playback_command(ActionsLink_Rpi_Host_PlaybackAction_Action_NEXT_TRACK);
+}
+
+int actionslink_host_previous_track(void)
+{
+    return send_playback_command(ActionsLink_Rpi_Host_PlaybackAction_Action_PREVIOUS_TRACK);
+}
+#endif // ActionsLink_Rpi_Host_PlaybackAction_init_default
+#endif // send_avrcp_action_tag or send_playback_action_tag
+
+#ifdef ActionsLink_FromMcuRequest_set_bt_pairing_state_tag
 static int set_pairing_state(ActionsLink_Bluetooth_PairingState_PairingType pairing_state)
 {
     if (!is_driver_ready())
@@ -508,7 +724,7 @@ int actionslink_start_multichain_pairing(void)
     return set_pairing_state(ActionsLink_Bluetooth_PairingState_PairingType_CSB_AUTO);
 }
 
-#ifdef INCLUDE_TWS_MODE
+#ifdef ActionsLink_FromMcuRequest_start_tws_pairing_tag
 int actionslink_start_tws_pairing(void)
 {
     return set_pairing_state(ActionsLink_Bluetooth_PairingState_PairingType_TWS_AUTO);
@@ -523,7 +739,7 @@ int actionslink_start_tws_pairing_as_slave(void)
 {
     return set_pairing_state(ActionsLink_Bluetooth_PairingState_PairingType_TWS_SLAVE_PAIRING);
 }
-#endif // INCLUDE_TWS_MODE
+#endif
 
 int actionslink_start_csb_broadcaster(void)
 {
@@ -539,7 +755,9 @@ int actionslink_stop_pairing(void)
 {
     return set_pairing_state(ActionsLink_Bluetooth_PairingState_PairingType_IDLE);
 }
+#endif // ActionsLink_FromMcuRequest_set_bt_pairing_state_tag
 
+#ifdef ActionsLink_FromMcuRequest_exit_csb_mode_tag
 int actionslink_exit_csb_mode(actionslink_csb_master_exit_reason_t reason)
 {
     if (!is_driver_ready())
@@ -581,8 +799,9 @@ int actionslink_exit_csb_mode(actionslink_csb_master_exit_reason_t reason)
     }
     return 0;
 }
+#endif // ActionsLink_FromMcuRequest_exit_csb_mode_tag
 
-#ifdef INCLUDE_TWS_MODE
+#ifdef ActionsLink_FromMcuRequest_exit_tws_mode_tag
 int actionslink_exit_tws_mode(void)
 {
     if (!is_driver_ready())
@@ -605,8 +824,9 @@ int actionslink_exit_tws_mode(void)
     }
     return 0;
 }
-#endif // INCLUDE_TWS_MODE
+#endif
 
+#ifdef ActionsLink_FromMcuRequest_enable_bt_reconnection_tag
 int actionslink_enable_bt_reconnection(bool enable)
 {
     if (!is_driver_ready())
@@ -630,7 +850,9 @@ int actionslink_enable_bt_reconnection(bool enable)
     }
     return 0;
 }
+#endif // ActionsLink_FromMcuRequest_enable_bt_reconnection_tag
 
+#ifdef ActionsLink_FromMcuEvent_notify_aux_connected_tag
 int actionslink_send_aux_connection_notification(bool is_connected)
 {
     if (!is_driver_ready())
@@ -652,7 +874,9 @@ int actionslink_send_aux_connection_notification(bool is_connected)
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuEvent_notify_usb_connected_tag
 int actionslink_send_usb_connection_notification(bool is_connected)
 {
     if (!is_driver_ready())
@@ -674,7 +898,9 @@ int actionslink_send_usb_connection_notification(bool is_connected)
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuEvent_notify_battery_level_tag
 int actionslink_send_battery_level(uint8_t battery_level)
 {
     if (!is_driver_ready())
@@ -696,7 +922,9 @@ int actionslink_send_battery_level(uint8_t battery_level)
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuEvent_notify_charger_status_tag
 int actionslink_send_charger_status(actionslink_charger_status_t status)
 {
     if (!is_driver_ready())
@@ -738,7 +966,9 @@ int actionslink_send_charger_status(actionslink_charger_status_t status)
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuEvent_notify_battery_friendly_charging_tag
 int actionslink_send_battery_friendly_charging_notification(bool status)
 {
     if (!is_driver_ready())
@@ -759,9 +989,10 @@ int actionslink_send_battery_friendly_charging_notification(bool status)
         return -1;
     }
     return 0;
-
 }
+#endif
 
+#ifdef ActionsLink_FromMcuEvent_notify_eco_mode_tag
 int actionslink_send_eco_mode_state(bool state)
 {
     if (!is_driver_ready())
@@ -783,7 +1014,9 @@ int actionslink_send_eco_mode_state(bool state)
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuEvent_notify_color_tag
 int actionslink_send_color_id(actionslink_device_color_t color)
 {
     if (!is_driver_ready())
@@ -805,7 +1038,9 @@ int actionslink_send_color_id(actionslink_device_color_t color)
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuRequest_send_usb_hid_action_tag
 static int send_usb_hid_command(ActionsLink_Usb_HidAction_Action action)
 {
     if (!is_driver_ready())
@@ -844,7 +1079,9 @@ int actionslink_usb_previous_track(void)
 {
     return send_usb_hid_command(ActionsLink_Usb_HidAction_Action_PREVIOUS_TRACK);
 }
+#endif // ActionsLink_FromMcuRequest_send_usb_hid_action_tag
 
+#ifdef ActionsLink_FromMcuRequest_set_audio_source_tag
 int actionslink_set_audio_source(actionslink_audio_source_t source)
 {
     if (!is_driver_ready())
@@ -888,7 +1125,9 @@ int actionslink_set_audio_source(actionslink_audio_source_t source)
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuRequest_play_sound_icon_tag
 static int get_actionslink_sound_icon_id(actionslink_sound_icon_t sound_icon)
 {
     ActionsLink_Audio_SoundIcon sound_icon_id;
@@ -994,7 +1233,9 @@ int actionslink_play_sound_icon(actionslink_sound_icon_t               sound_ico
     }
     return 0;
 }
+#endif
 
+#ifdef ActionsLink_FromMcuRequest_stop_sound_icon_tag
 int actionslink_stop_sound_icon(actionslink_sound_icon_t sound_icon)
 {
     if (!is_driver_ready())
@@ -1024,6 +1265,7 @@ int actionslink_stop_sound_icon(actionslink_sound_icon_t sound_icon)
     }
     return 0;
 }
+#endif
 
 static ActionsLink_Common_Result to_pb_result(actionslink_error_t error)
 {
@@ -1056,6 +1298,7 @@ static ActionsLink_Common_Result to_pb_result(actionslink_error_t error)
     return result;
 }
 
+#ifdef ActionsLink_ToMcuRequest_get_color_tag
 static ActionsLink_Eco_Device_Color to_pb_color(actionslink_device_color_t color)
 {
     switch (color)
@@ -1072,6 +1315,7 @@ static ActionsLink_Eco_Device_Color to_pb_color(actionslink_device_color_t color
             return ActionsLink_Eco_Device_Color_BLACK;
     }
 }
+#endif
 
 static int actionslink_send_set_common_response(uint32_t pb_tag, uint8_t sequence_id,
     actionslink_error_t a_error)
@@ -1085,47 +1329,66 @@ static int actionslink_send_set_common_response(uint32_t pb_tag, uint8_t sequenc
     message.Payload.response.which_Response         = pb_tag;
 
     ActionsLink_Common_Result result = to_pb_result(a_error);
+#ifdef ActionsLink_FromMcuResponse_error_tag
+    message.Payload.response.Response.error = result;
+#elif defined(ActionsLink_FromMcuResponse_set_off_timer_tag)
     // TODO: Warning! In order to not duplicate the code we can use _any_ value with type Common.Result.
     // Set off timer response has such type therefore we can use it for all responses with Common.Result type.
     message.Payload.response.Response.set_off_timer = result;
+#endif
 
     return actionslink_bt_ul_tx(&message);
 }
 
+#ifdef ActionsLink_FromMcuResponse_set_off_timer_tag
 int actionslink_send_set_off_timer_response(uint8_t sequence_id, actionslink_error_t result)
 {
     return actionslink_send_set_common_response(ActionsLink_FromMcuResponse_set_off_timer_tag, sequence_id, result);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_set_brightness_tag
 int actionslink_send_set_brightness_response(uint8_t sequence_id, actionslink_error_t result)
 {
     return actionslink_send_set_common_response(ActionsLink_FromMcuResponse_set_brightness_tag, sequence_id, result);
 }
+#endif
 
+
+#ifdef ActionsLink_FromMcuResponse_set_bass_tag
 int actionslink_send_set_bass_response(uint8_t sequence_id, actionslink_error_t result)
 {
     return actionslink_send_set_common_response(ActionsLink_FromMcuResponse_set_bass_tag, sequence_id, result);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_set_treble_tag
 int actionslink_send_set_treble_response(uint8_t sequence_id, actionslink_error_t result)
 {
     return actionslink_send_set_common_response(ActionsLink_FromMcuResponse_set_treble_tag, sequence_id, result);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_set_eco_mode_tag
 int actionslink_send_set_eco_mode_response(uint8_t sequence_id, actionslink_error_t result)
 {
     return actionslink_send_set_common_response(ActionsLink_FromMcuResponse_set_eco_mode_tag, sequence_id, result);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_set_sound_icons_tag
 int actionslink_send_set_sound_icons_response(uint8_t sequence_id, actionslink_error_t result)
 {
     return actionslink_send_set_common_response(ActionsLink_FromMcuResponse_set_sound_icons_tag, sequence_id, result);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_set_battery_friendly_charging_tag
 int actionslink_send_set_battery_friendly_charging_response(uint8_t sequence_id, actionslink_error_t result)
 {
     return actionslink_send_set_common_response(ActionsLink_FromMcuResponse_set_battery_friendly_charging_tag, sequence_id, result);
 }
+#endif
 
 int actionslink_send_get_mcu_firmware_version_response(uint8_t sequence_id,
     uint32_t major, uint32_t minor, uint32_t patch, const char *build)
@@ -1146,6 +1409,7 @@ int actionslink_send_get_mcu_firmware_version_response(uint8_t sequence_id,
     return actionslink_bt_ul_tx(&message);
 }
 
+#ifdef ActionsLink_FromMcuResponse_get_pdcontroller_firmware_version_tag
 int actionslink_send_get_pdcontroller_firmware_version_response(uint8_t sequence_id, uint32_t major, uint32_t minor)
 {
     if (!is_driver_ready())
@@ -1161,6 +1425,7 @@ int actionslink_send_get_pdcontroller_firmware_version_response(uint8_t sequence
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
 #ifdef ActionsLink_FromMcuResponse_get_serial_number_tag
 int actionslink_send_get_serial_number_response(uint8_t sequence_id, const char *serial_number)
@@ -1179,6 +1444,7 @@ int actionslink_send_get_serial_number_response(uint8_t sequence_id, const char 
 }
 #endif
 
+#ifdef ActionsLink_FromMcuResponse_get_color_tag
 int actionslink_send_get_color_response(uint8_t sequence_id, actionslink_device_color_t color)
 {
     if (!is_driver_ready())
@@ -1192,7 +1458,9 @@ int actionslink_send_get_color_response(uint8_t sequence_id, actionslink_device_
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_get_off_timer_tag
 int actionslink_send_get_off_timer_response(uint8_t sequence_id, bool is_enabled, uint32_t value)
 {
     if (!is_driver_ready())
@@ -1209,7 +1477,9 @@ int actionslink_send_get_off_timer_response(uint8_t sequence_id, bool is_enabled
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_get_brightness_tag
 int actionslink_send_get_brightness_response(uint8_t sequence_id, uint32_t value)
 {
     if (!is_driver_ready())
@@ -1223,7 +1493,9 @@ int actionslink_send_get_brightness_response(uint8_t sequence_id, uint32_t value
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_get_bass_tag
 int actionslink_send_get_bass_response(uint8_t sequence_id, int8_t value)
 {
     if (!is_driver_ready())
@@ -1237,7 +1509,9 @@ int actionslink_send_get_bass_response(uint8_t sequence_id, int8_t value)
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_get_treble_tag
 int actionslink_send_get_treble_response(uint8_t sequence_id, int8_t value)
 {
     if (!is_driver_ready())
@@ -1251,7 +1525,9 @@ int actionslink_send_get_treble_response(uint8_t sequence_id, int8_t value)
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_get_eco_mode_tag
 int actionslink_send_get_eco_mode_response(uint8_t sequence_id, bool is_enabled)
 {
     if (!is_driver_ready())
@@ -1265,7 +1541,9 @@ int actionslink_send_get_eco_mode_response(uint8_t sequence_id, bool is_enabled)
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_get_eco_mode_tag
 int actionslink_send_get_sound_icons_response(uint8_t sequence_id, bool is_enabled)
 {
     if (!is_driver_ready())
@@ -1279,7 +1557,9 @@ int actionslink_send_get_sound_icons_response(uint8_t sequence_id, bool is_enabl
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_get_battery_friendly_charging_tag
 int actionslink_send_get_battery_friendly_charging_response(uint8_t sequence_id, bool is_enabled)
 {
     if (!is_driver_ready())
@@ -1293,7 +1573,9 @@ int actionslink_send_get_battery_friendly_charging_response(uint8_t sequence_id,
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_get_battery_capacity_tag
 int actionslink_send_get_battery_capacity_response(uint8_t sequence_id, uint32_t value)
 {
     if (!is_driver_ready())
@@ -1307,7 +1589,9 @@ int actionslink_send_get_battery_capacity_response(uint8_t sequence_id, uint32_t
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
+#ifdef ActionsLink_FromMcuResponse_get_battery_max_capacity_tag
 int actionslink_send_get_battery_max_capacity_response(uint8_t sequence_id, uint32_t value)
 {
     if (!is_driver_ready())
@@ -1321,6 +1605,7 @@ int actionslink_send_get_battery_max_capacity_response(uint8_t sequence_id, uint
 
     return actionslink_bt_ul_tx(&message);
 }
+#endif
 
 const char *actionslink_get_version()
 {

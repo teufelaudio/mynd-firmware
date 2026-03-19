@@ -7,6 +7,8 @@ bool actionslink_decode_to_mcu_message(pb_istream_t *stream, const pb_field_t *f
 bool actionslink_decode_to_mcu_response_message(pb_istream_t *stream, const pb_field_t *field, void **arg);
 bool actionslink_decode_to_mcu_event_message(pb_istream_t *stream, const pb_field_t *field, void **arg);
 bool actionslink_decode_string(pb_istream_t *stream, const pb_field_t *field, void **arg);
+bool actionslink_decode_device(pb_istream_t *stream, const pb_field_t *field, void **arg);
+bool actionslink_decode_paired_device_list(pb_istream_t *stream, const pb_field_t *field, void **arg);
 
 // Unused code that could be useful for future reference
 #if 0

@@ -10,6 +10,7 @@ find_package(USBDevice COMPONENTS CDC MSC REQUIRED QUIET)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/teufel/libs")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/teufel/drivers")
+set(TeufelLibsPath "${CMAKE_CURRENT_SOURCE_DIR}/external/teufel/libs")
 find_package(TeufelDrivers COMPONENTS aw9523b REQUIRED QUIET)
 find_package(TeufelLibraries COMPONENTS app_assert syscalls REQUIRED QUIET)
 

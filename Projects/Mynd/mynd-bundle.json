@@ -12,38 +12,38 @@
     {
       "name": "mcu",
       "path": "mcu",
-      "filename": "mynd-v1.3.0.hex",
-      "version": "v1.3.0"
+      "filename": "mynd-v1.5.0.hex",
+      "version": "v1.5.0"
     },
     {
       "name": "mcu-complete",
       "path": "mcu",
-      "filename": "mynd-complete-v1.3.0.hex",
-      "version": "v1.3.0"
+      "filename": "mynd-complete-v1.5.0.hex",
+      "version": "v1.5.0"
     },
     {
       "name": "mcu-factory-complete",
       "path": "mcu",
-      "filename": "mynd-factory-complete-v1.3.0.hex",
-      "version": "v1.3.0"
+      "filename": "mynd-factory-complete-v1.5.0.hex",
+      "version": "v1.5.0"
     },
     {
       "name": "update-firmware-mcu",
       "path": "mcu",
-      "filename": "mynd-update-firmware-mcu-v1.3.0.bin",
-      "version": "v1.3.0"
+      "filename": "mynd-update-firmware-mcu-v1.5.0.bin",
+      "version": "v1.5.0"
     },
     {
       "name": "factory-update-firmware-mcu",
       "path": "mcu",
-      "filename": "mynd-factory-update-firmware-mcu-v1.3.0.bin",
-      "version": "v1.3.0"
+      "filename": "mynd-factory-update-firmware-mcu-v1.5.0.bin",
+      "version": "v1.5.0"
     },
     {
       "name": "bluetooth",
       "path": "bluetooth",
-      "filename": "Teufel_MYND_20241016_v1.3.8.zip",
-      "version": "v1.3.8"
+      "filename": "Teufel_MYND_20251112_v1.3.9.zip",
+      "version": "v1.3.9"
     },
     {
       "name": "pd-controller",

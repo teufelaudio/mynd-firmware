@@ -35,6 +35,7 @@
 
 #include "tshell_printf.h"
 
+
 // define this globally (e.g. gcc -DPRINTF_INCLUDE_CONFIG_H ...) to include the
 // printf_config.h header file
 // default: undefined
@@ -42,18 +43,19 @@
 #include "printf_config.h"
 #endif
 
+
 // 'ntoa' conversion buffer size, this must be big enough to hold one converted
 // numeric number including padded zeros (dynamically created on stack)
 // default: 32 byte
 #ifndef PRINTF_NTOA_BUFFER_SIZE
-#define PRINTF_NTOA_BUFFER_SIZE 32U
+#define PRINTF_NTOA_BUFFER_SIZE    32U
 #endif
 
 // 'ftoa' conversion buffer size, this must be big enough to hold one converted
 // float number including padded zeros (dynamically created on stack)
 // default: 32 byte
 #ifndef PRINTF_FTOA_BUFFER_SIZE
-#define PRINTF_FTOA_BUFFER_SIZE 32U
+#define PRINTF_FTOA_BUFFER_SIZE    32U
 #endif
 
 // support for the floating point type (%f)
@@ -71,13 +73,13 @@
 // define the default floating point precision
 // default: 6 digits
 #ifndef PRINTF_DEFAULT_FLOAT_PRECISION
-#define PRINTF_DEFAULT_FLOAT_PRECISION 6U
+#define PRINTF_DEFAULT_FLOAT_PRECISION  6U
 #endif
 
 // define the largest float suitable to print with %f
 // default: 1e9
 #ifndef PRINTF_MAX_FLOAT
-#define PRINTF_MAX_FLOAT 1e9
+#define PRINTF_MAX_FLOAT  1e9
 #endif
 
 // support for the long long types (%llu or %p)
@@ -96,18 +98,19 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // internal flag definitions
-#define FLAGS_ZEROPAD   (1U << 0U)
-#define FLAGS_LEFT      (1U << 1U)
-#define FLAGS_PLUS      (1U << 2U)
-#define FLAGS_SPACE     (1U << 3U)
-#define FLAGS_HASH      (1U << 4U)
-#define FLAGS_UPPERCASE (1U << 5U)
-#define FLAGS_CHAR      (1U << 6U)
-#define FLAGS_SHORT     (1U << 7U)
-#define FLAGS_LONG      (1U << 8U)
-#define FLAGS_LONG_LONG (1U << 9U)
+#define FLAGS_ZEROPAD   (1U <<  0U)
+#define FLAGS_LEFT      (1U <<  1U)
+#define FLAGS_PLUS      (1U <<  2U)
+#define FLAGS_SPACE     (1U <<  3U)
+#define FLAGS_HASH      (1U <<  4U)
+#define FLAGS_UPPERCASE (1U <<  5U)
+#define FLAGS_CHAR      (1U <<  6U)
+#define FLAGS_SHORT     (1U <<  7U)
+#define FLAGS_LONG      (1U <<  8U)
+#define FLAGS_LONG_LONG (1U <<  9U)
 #define FLAGS_PRECISION (1U << 10U)
 #define FLAGS_ADAPT_EXP (1U << 11U)
+
 
 // import float.h for DBL_MAX
 #if defined(PRINTF_SUPPORT_FLOAT)
@@ -115,7 +118,8 @@
 #endif
 
 // output function type
-typedef void (*out_fct_type)(char character, void *buffer, size_t idx, size_t maxlen);
+typedef void (*out_fct_type)(char character, void* buffer, size_t idx, size_t maxlen);
+
 
 _putchar_fn_t _putchar = NULL;
 
@@ -322,7 +326,8 @@ static size_t _ntoa_long_long(out_fct_type out, char* buffer, size_t idx, size_t
 
     return _ntoa_format(out, buffer, idx, maxlen, buf, len, negative, (unsigned int)base, prec, width, flags);
 }
-#endif // PRINTF_SUPPORT_LONG_LONG
+#endif  // PRINTF_SUPPORT_LONG_LONG
+
 
 #if defined(PRINTF_SUPPORT_FLOAT)
 
@@ -458,6 +463,7 @@ static size_t _ftoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
     return _out_rev(out, buffer, idx, maxlen, buf, len, width, flags);
 }
 
+
 #if defined(PRINTF_SUPPORT_EXPONENTIAL)
 // internal ftoa variant for exponential floating-point type, contributed by Martijn Jasperse <m.jasperse@gmail.com>
 static size_t _etoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, double value, unsigned int prec, unsigned int width, unsigned int flags)
@@ -565,8 +571,8 @@ static size_t _etoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
     }
     return idx;
 }
-#endif // PRINTF_SUPPORT_EXPONENTIAL
-#endif // PRINTF_SUPPORT_FLOAT
+#endif  // PRINTF_SUPPORT_EXPONENTIAL
+#endif  // PRINTF_SUPPORT_FLOAT
 
 
 // internal vsnprintf
@@ -767,8 +773,8 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen, const
                 idx = _etoa(out, buffer, idx, maxlen, va_arg(va, double), precision, width, flags);
                 format++;
                 break;
-#endif // PRINTF_SUPPORT_EXPONENTIAL
-#endif // PRINTF_SUPPORT_FLOAT
+#endif  // PRINTF_SUPPORT_EXPONENTIAL
+#endif  // PRINTF_SUPPORT_FLOAT
             case 'c' : {
                 unsigned int l = 1U;
                 // pre padding

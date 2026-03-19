@@ -2,9 +2,11 @@ set(API_HEADERS
     leds.h
 )
 
-set(SOURCES
-    leds.cpp
-)
+if (CMAKE_ENABLE_RPI_MOD)
+    set(SOURCES leds_rpi.cpp)
+else()
+    set(SOURCES leds.cpp)
+endif()
 
 target_sources(${projectTarget} PRIVATE ${API_HEADERS} ${SOURCES})
 

@@ -1,0 +1,220 @@
+@startuml
+title MCU ↔ RPi ActionsLink Power Sequence
+
+participant SysTask as "System Task"
+participant AudioTask as "Audio Task"
+participant RpiTask as "RPi Task (MCU)"
+participant RpiDaemon as "RPi Daemon"
+participant Moode
+
+== MCU Hardware Boot ==
+
+note over SysTask, RpiTask: **MCU PCB powers on** (hardware boot)\nRPi is **not** powered yet
+
+SysTask -> SysTask: MCU firmware boots, system task starts
+
+== System Task Callback_Init ==
+
+SysTask -> SysTask: Storage, tshell, power supply init
+SysTask -> AudioTask: Start Audio task (wait)
+SysTask -> RpiTask: Start RpiLink task (wait)
+note right: RPi task init: board_link_bluetooth_init()\nset_power(**false**), hold reset\n**RPi still unpowered**
+
+SysTask -> SysTask: Check boot conditions\n(power_on_after_update || button held)
+SysTask -> SysTask: postMessage(SetPowerState On) to self
+
+== Power-On: PreOn — Hardware Bring-up ==
+
+SysTask -> SysTask: setTransition(PreOn)
+SysTask -> AudioTask: postMessage(SetPowerState PreOn)
+note right: Enable boost converter (PVDD),\nIO expander, amp PDN pins,\nbattery LED indication
+SysTask <-- AudioTask: notify (PreOn complete)
+
+SysTask -> RpiTask: postMessage(SetPowerState PreOn)
+note right: **No Linux-ready wait here**\nonly MCU-side RPi rail/UART bring-up
+
+RpiTask -> RpiTask: board_link_bluetooth_reset(true)\nboard_link_bluetooth_set_power(false)
+RpiTask -> RpiTask: short delay
+RpiTask -> RpiTask: board_link_bluetooth_reset(false)\nboard_link_bluetooth_set_power(true)
+note right: **RPi hardware powers on NOW**\nLinux boot starts (~10-30s)
+RpiTask -> RpiTask: bsp_bluetooth_uart_clear_buffer()
+RpiTask -> RpiTask: actionslink_init()
+RpiTask -> SysTask: notify(PreOn complete)
+
+SysTask -> SysTask: p_power_state.set(PreOn)
+
+== Power-On: Async Handshake to On ==
+
+note over RpiTask: actionslink_tick() runs in task idle\nwhile System state is PreOn/On
+
+== RPi Boot Completes ==
+
+RpiDaemon -> RpiDaemon: Raspberry Pi OS boot completes
+
+RpiDaemon -> RpiDaemon: configure-moode.service runs
+note right: Mynd RPi Link helper (runs before Moode)\n\n- Ensures SSH, UART, I2C enabled\n- Ensures dtoverlay=hifiberry-dac\n- Configures moode DB: I2S DAC, mixer\n- Sets volknob to boot volume\n- Reboots ONLY if boot config changed
+
+RpiDaemon -> RpiDaemon: mynd-rpi-link.service starts
+RpiDaemon -> RpiDaemon: Daemon starts, ActionsLinkClient connects
+RpiDaemon -> RpiDaemon: Register event/request handlers
+RpiDaemon -> RpiDaemon: Short connection stabilization delay
+
+RpiDaemon -> RpiTask: **notify_system_ready event**
+note left: Daemon startup sends once.\nTransport-layer retries/timeouts apply inside send_event.
+
+SysTask -> SysTask: setTransition(On)
+
+== Power-On: On Transition ==
+
+SysTask -> AudioTask: postMessage(SetPowerState On)
+note right: Check board_link_amps_fs_ready():\nIf I2S clock detected -> setup_amps()\nIf not -> defer to idle polling\n(pending_amp_setup = true)
+SysTask <-- AudioTask: notify (On complete)
+
+SysTask -> RpiTask: postMessage(SetPowerState On)
+RpiTask -> RpiDaemon: **setPowerState(ON) request**
+alt No initial MCU power-state request arrives within startup fallback window (~5s)
+    RpiDaemon -> RpiDaemon: ensure_startup_power_on()
+    RpiDaemon -> RpiTask: get_mcu_firmware_version request
+    RpiTask -> RpiDaemon: get_mcu_firmware_version response
+    RpiDaemon -> RpiDaemon: synthetic ON flow + daemon init
+    RpiDaemon -> RpiTask: **notify_power_state(ON) event** (synthetic ON)
+end
+note right: Daemon restarted or updated after MCU has already\ntransitioned to ON, so no new setPowerState(ON) will arrive.\nStartup fallback issues get_mcu_firmware_version request;\non successful response daemon performs synthetic ON:\nnotify_power_state(ON) + daemon service init.\nOn failure, the streaming monitor will not start.
+RpiDaemon -> RpiTask: Response: Success
+SysTask -> SysTask: p_power_state.set(On)
+
+RpiDaemon -> RpiDaemon: Start streaming monitor
+note right: Polls MPD periodically\nNotifies: host_source, stream_state\nBoot volume set by configure-moode.service
+RpiDaemon -> RpiTask: **notify_power_state(ON) event**
+RpiTask -> RpiTask: setProperty(RpiLink::PowerState::On)
+note over SysTask, Moode: **System Fully Operational**
+
+== Power-Off Sequence ==
+
+SysTask -> SysTask: Power button or auto-shutdown
+
+=== PreOff: Task Audio ==
+
+SysTask -> SysTask: setTransition(PreOff)
+SysTask -> AudioTask: postMessage(SetPowerState PreOff)
+note right: LED animations, etc.
+SysTask <-- AudioTask: notify (PreOff complete)
+
+=== PreOff: RPi (head start on shutdown) ==
+
+SysTask -> RpiTask: postMessage(SetPowerState PreOff)
+
+RpiTask -> RpiDaemon: **setPowerState(OFF) request**
+note left: Sent during PreOff\nGives RPi head start on shutdown
+
+RpiDaemon -> RpiDaemon: Short delay (prevent ACK race)
+RpiDaemon -> RpiTask: **Response: Success**
+
+RpiTask -> SysTask: notify(PreOff complete)
+
+=== Off: Task Audio ==
+
+SysTask -> SysTask: setTransition(Off)
+SysTask -> AudioTask: postMessage(SetPowerState Off)
+note right: Turn off amps
+SysTask <-- AudioTask: notify (Off complete)
+
+=== Off: RPi ==
+
+SysTask -> RpiTask: postMessage(SetPowerState Off)
+
+RpiTask -> RpiTask: wait_for_rpi_off()
+RpiDaemon -> RpiDaemon: Short delay (allow MCU tick processing)
+RpiDaemon -> Moode: Pause playback (if playing, fire-and-forget)
+RpiDaemon -> RpiDaemon: Stop streaming monitor
+RpiDaemon -> RpiDaemon: Prepare shutdown (sync filesystem)
+RpiDaemon -> RpiDaemon: Initiate poweroff (sudo poweroff returns immediately)
+
+RpiDaemon -> RpiTask: notify_host_source(UNKNOWN)
+RpiDaemon -> RpiTask: **notify_power_state(OFF) event**
+note left: RPi proceeds with shutdown\neven if MCU doesn't ACK
+
+RpiTask -> RpiTask: setProperty(RpiLink::PowerState::Off)
+RpiTask -> RpiTask: actionslink_deinit()
+RpiTask -> RpiTask: board_link_bluetooth_reset(true)\nboard_link_bluetooth_set_power(false)
+RpiTask -> SysTask: notify(Off complete)
+
+note over RpiDaemon: System shutdown continues\n(initiated before notify was sent)
+
+SysTask -> SysTask: board_link_power_supply_hold_on(false)
+SysTask -> SysTask: p_power_state.set(Off)
+
+== Drag-and-Drop Firmware Update Sequence ==
+
+note over SysTask, Moode: **User wants to update MCU firmware**
+
+AudioTask -> AudioTask: Power+Minus button combo (LongPress detected)
+AudioTask -> RpiTask: postMessage(DragAndDropUpdate)
+note right: Non-blocking post from Audio task\nPrepare RPi shutdown\nbefore MCU enters bootloader
+
+RpiTask -> RpiTask: isProperty(RpiLink::PowerState::On)
+alt RPi already Off
+    note over RpiTask: Skip shutdown, already off
+end
+RpiTask -> RpiDaemon: **setPowerState(SHUTDOWN_REQUEST) request**
+
+RpiDaemon -> RpiDaemon: Short delay (prevent ACK race)
+RpiDaemon -> RpiTask: **Response: Success**
+RpiDaemon -> RpiDaemon: Short delay (allow MCU tick processing)
+
+RpiTask -> RpiTask: wait_for_rpi_off()
+note left: MCU waits in loop:\nwhile (!isPropertyOneOf(Off, ShutdownRequested))\n  actionslink_tick()
+
+RpiDaemon -> Moode: Pause playback (if playing, fire-and-forget)
+RpiDaemon -> RpiDaemon: Stop streaming monitor
+RpiDaemon -> RpiDaemon: Prepare shutdown (sync filesystem)
+RpiDaemon -> RpiDaemon: Initiate poweroff (sudo poweroff returns immediately)
+
+RpiDaemon -> RpiTask: notify_host_source(UNKNOWN)
+RpiDaemon -> RpiTask: **notify_power_state(SHUTDOWN_REQUEST) event**
+
+RpiTask -> RpiTask: setProperty(RpiLink::PowerState::ShutdownRequested)
+
+note over RpiDaemon: System shutdown continues
+
+
+RpiTask -> RpiTask: SyncPrimitive::notify(ot_id)
+
+note over AudioTask: User continues holding Power+Minus
+
+AudioTask -> AudioTask: VeryVeryLongPress detected
+AudioTask -> AudioTask: Write magic value to RTC backup register
+AudioTask -> AudioTask: NVIC_SystemReset()
+note over SysTask: **MCU drag-and-drop update mode**\nUSB mass storage device appears\nUser can drag firmware file
+
+== RpiLink Daemon Disabled/Deactivated/Uninstalled via SSH (RPi remains On) ==
+
+RpiDaemon -> Moode: Pause playback (if playing, fire-and-forget)
+RpiDaemon -> RpiDaemon: Stop streaming monitor
+RpiDaemon -> RpiTask: notify_host_source(UNKNOWN)
+RpiDaemon -> RpiTask: **notify_power_state(Standby) event**
+RpiTask -> RpiTask: setProperty(RpiLink::PowerState::Standby)
+
+== Request Deduplication & Retransmission ==
+
+note over RpiTask, RpiDaemon
+  **Retry Mechanism:**
+  - MCU: ActionsLink automatically retries failed transmissions
+  - RPi: Request handlers track last seq_id per request type
+  - Duplicate seq_id → request ignored (prevents double-processing)
+  
+  **Short delays in daemon prevent race conditions:**
+  - Before responses: prevents ACK race with incoming request
+  - Before notify_power_state: allows MCU actionslink_tick() processing
+  - After connect: connection stabilization
+  - Startup fallback: if no MCU power state soon after connect,\n    daemon sends get_mcu_firmware_version then synthetic ON flow
+  
+  **Critical Ordering (Power-Off):**
+  1. Prepare shutdown (pause, sync)
+  2. Initiate poweroff (sudo poweroff - returns immediately)
+  3. Send notify_host_source(UNKNOWN)
+  4. Send notify_power_state(OFF) - proceeds even if no ACK
+  5. System shutdown continues (already initiated in step 2)
+end note
+
+@enduml

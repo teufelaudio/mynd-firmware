@@ -1,0 +1,53 @@
+name: Build MYND Firmware
+
+on:
+  push:
+    branches: ["main", "MYNDberry"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+  actions: read
+
+jobs:
+  build_mynd:
+    name: Build Mynd
+    runs-on: ubuntu-latest
+    # needs: build_bootloader
+    container:
+      image: ghcr.io/teufelaudio/myndfirmware:latest
+      # Use this line instead if you built and pushed the container to your own GHCR
+      # image: ghcr.io/${{ github.repository_owner }}/myndfirmware:latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build artifacts
+        env:
+          # TFL_PROJECT_NAME: Mynd
+          TFL_BUILD_TARGETS: |
+            mynd-bootloader.hex
+            mynd.hex
+            mynd-factory.hex
+            mynd-complete
+            mynd-factory-complete
+            mynd-update-firmware-mcu
+            mynd-factory-update-firmware-mcu
+            myndberry-complete
+            myndberry-update-firmware-mcu
+          TFL_CMAKE_TOOLCHAIN_PREFIX: /usr/local
+          TFL_CMAKE_BUILD_TYPE: Release
+          TFL_PROJECT_DIR: ${{ github.workspace }}
+        run: support/scripts/build_artifacts.sh
+        continue-on-error: true # Continue building other targets even if one fails
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build_Mynd
+          path: ${{ github.workspace }}/build/Projects/
+          if-no-files-found: error

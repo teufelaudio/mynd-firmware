@@ -1,0 +1,76 @@
+syntax = "proto3";
+package ActionsLink.Rpi.Host;
+
+import "common.proto";
+import "nanopb.proto";
+
+/** Host (Moode) audio source for LED indication. */
+enum Source {
+  SOURCE_UNKNOWN = 0;
+  SOURCE_MPD = 1;
+  SOURCE_AIRPLAY = 2;
+  SOURCE_BLUETOOTH = 3;
+  SOURCE_SPOTIFY = 4;
+}
+
+/** Generic playback control for host (Moode) - applies to any source (MPD, AirPlay, Spotify, BT). */
+message PlaybackAction {
+  enum Action {
+    PLAY = 0;
+    PAUSE = 1;
+    TOGGLE_PLAY_PAUSE = 2;
+    NEXT_TRACK = 3;
+    PREVIOUS_TRACK = 4;
+  }
+  
+  Action action = 1;
+}
+
+/** Request to switch the active host renderer back to MPD. */
+message CycleSource {}
+
+/** WiFi network configuration for RPi. */
+message ConfigureWiFi {
+  string ssid = 1 [(nanopb).max_size = 33];        /** WiFi network SSID/name (max 32 bytes) */
+  string password = 2 [(nanopb).max_size = 64];    /** WiFi network password (max 63 bytes WPA2) */
+}
+
+message ConfigureWiFiCommand {
+  uint32 command_id = 1;
+  ConfigureWiFi config = 2;
+}
+
+message EnableHotspotCommand {
+  uint32 command_id = 1;
+}
+
+message CycleWiFiNetworkCommand {
+  uint32 command_id = 1;
+}
+
+message WiFiCommandResult {
+  enum ActionType {
+    ACTION_TYPE_UNKNOWN = 0;
+    ACTION_TYPE_CONFIGURE_WIFI = 1;
+    ACTION_TYPE_ENABLE_HOTSPOT = 2;
+    ACTION_TYPE_CYCLE_WIFI_NETWORK = 3;
+  }
+
+  enum Detail {
+    DETAIL_NONE = 0;
+    DETAIL_BUSY = 1;
+  }
+
+  uint32 command_id = 1;
+  ActionType action_type = 2;
+  Common.Result status = 3;
+  bool target_reached = 4;
+  Detail detail = 5;
+}
+
+/** WiFi connection info reported by RPi after successful connection. */
+message WiFiConnectInfo {
+  string ssid = 1 [(nanopb).max_size = 33];        /** Connected WiFi SSID/name (max 32 bytes) */
+  string ip_address = 2 [(nanopb).max_size = 16];  /** IPv4 address (xxx.xxx.xxx.xxx) */
+  string username = 3 [(nanopb).max_size = 33];    /** RPi user for SSH convenience (max 32 chars) */
+}

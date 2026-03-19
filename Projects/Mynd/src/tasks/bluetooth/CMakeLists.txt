@@ -2,9 +2,9 @@ set(API_HEADERS
     task_bluetooth.h
 )
 
-set(SOURCES
-    task_bluetooth.cpp
-)
+if(NOT CMAKE_ENABLE_RPI_MOD)
+    set(SOURCES task_bluetooth.cpp)
+endif()
 
 target_sources(${projectTarget} PRIVATE ${API_HEADERS} ${SOURCES})
 

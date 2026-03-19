@@ -36,7 +36,7 @@
 #include "external/teufel/libs/core_utils/debouncer.h"
 #include "external/teufel/libs/app_assert/app_assert.h"
 
-#ifdef INCLUDE_PRODUCTION_TESTS
+#ifdef INCLUDE_FACTORY_TESTS
 #include "tests.h"
 #endif
 
@@ -48,7 +48,6 @@
 namespace Teufel::Task::Audio
 {
 
-namespace Tu  = Teufel::Ux;
 namespace Tua = Teufel::Ux::Audio;
 namespace Tub = Teufel::Ux::Bluetooth;
 namespace Tus = Teufel::Ux::System;
@@ -99,6 +98,8 @@ static auto pwr_ac_debouncer = Debouncer<bool, 2000>{true, get_systick, board_ge
 // static auto volume_debouncer = Debouncer<bool, 200>{false, get_systick, board_get_ms_since};
 
 static void read_io_expander_inputs();
+static void configure_eco_mode(bool enable);
+static void setup_amps();
 static void disable_amps();
 
 static Tus::Task                                           ot_id                      = Tus::Task::Audio;
@@ -119,6 +120,7 @@ static struct
     bool ignore_hold_until_stop_pairing           = false;
     bool bypass_mode                              = false;
     bool plug_connected                           = false;
+    bool pending_amp_setup                        = false;
 } s_audio;
 
 static const board_link_usb_pd_controller_callbacks_t usb_callbacks = {
@@ -318,6 +320,12 @@ TS_KEY_VALUE_CONST_MAP(EventHandlerMapper, uint32_t, button_event_handler_fn_t,
                 Teufel::Task::Bluetooth::postMessage(ot_id, Teufel::Ux::Bluetooth::ClearDeviceList {});
                 Leds::set_source_pattern(Leds::SourcePattern::PositiveFeedback);
                 break;
+            case Teufel::Ux::InputState::RawPress:
+                if (!is_pairing())
+                {
+                    set_source_pattern(get_connected_source_pattern());
+                }
+                break;
 #ifdef BOARD_CONFIG_HAS_NO_I2C_MODE
             case Ux::InputState::TriplePress:
                 s_audio.no_i2c_mode = true;
@@ -334,13 +342,8 @@ TS_KEY_VALUE_CONST_MAP(EventHandlerMapper, uint32_t, button_event_handler_fn_t,
 
                 log_highlight("Disabling I2C communication");
                 bsp_shared_i2c_deinit();
-#endif
-            case Teufel::Ux::InputState::RawPress:
-                if (!is_pairing())
-                {
-                    set_source_pattern(get_connected_source_pattern());
-                }
                 break;
+#endif // BOARD_CONFIG_HAS_NO_I2C_MODE
             default:
                 break;
         }
@@ -472,8 +475,8 @@ TS_KEY_VALUE_CONST_MAP(EventHandlerMapper, uint32_t, button_event_handler_fn_t,
         {
             if (isProperty(Ux::System::PowerState::Off))
                 Teufel::Task::System::postMessage(ot_id, Tus::SetPowerState { Tus::PowerState::On, Tus::PowerState::Off });
-            log_err("start prod test!!!!");
-#ifdef INCLUDE_PRODUCTION_TESTS
+#ifdef INCLUDE_FACTORY_TESTS
+            log_warn("Enabling CLI, rerouting UART log output to USB-C via its D+, D-, and GND pins");
             // When test mode activated via POWER+BT, we need to pass UART lines to the USB port.
             board_link_usb_switch_to_uart_debug();
             set_power_with_prompt(true);
@@ -481,7 +484,7 @@ TS_KEY_VALUE_CONST_MAP(EventHandlerMapper, uint32_t, button_event_handler_fn_t,
             if (isProperty(Ux::System::PowerState::Off))
                 Teufel::Task::System::postMessage(ot_id, Tus::SetPowerState { Tus::PowerState::On, Tus::PowerState::Off });
         }
-#else // Do not include FW announcement feature in Production Test Mode FW
+#else // Do not include FW announcement feature in Factory Test Mode FW
         }
         else if (event == Ux::InputState::LongPress)
         {
@@ -489,7 +492,7 @@ TS_KEY_VALUE_CONST_MAP(EventHandlerMapper, uint32_t, button_event_handler_fn_t,
                                                                                ACTIONSLINK_SOUND_ICON_PLAYBACK_MODE_PLAY_IMMEDIATELY, 
                                                                                false});
         }
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif // INCLUDE_FACTORY_TESTS
     }},
     {BUTTON_ID_PLAY | BUTTON_ID_PLUS, [](Ux::InputState event) {
          log_debug("Play+Plus combo: %s", getDesc(event));
@@ -539,7 +542,7 @@ static const button_handler_config_t button_handler_config = {
             if (mapped_event.has_value())
             {
                 auto handler = Teufel::Core::mapValue(EventHandlerMapper, button_state);
-#if defined(INCLUDE_PRODUCTION_TESTS)
+#if defined(INCLUDE_FACTORY_TESTS)
                 if (is_key_test_activated())
                     handler = get_handler_mapper(button_state);
 #endif
@@ -603,11 +606,7 @@ static const GenericThread::Config<AudioMessage> threadConfig = {
                 s_is_aux_jack_connected = board_link_plug_detection_is_jack_connected();
                 log_info("Audio jack %s", s_is_aux_jack_connected ? "connected" : "disconnected");
 
-                // Mute and unmute amps to prevent pop noise.
-                // The delay amount of 200 ms is derived from testing
-                board_link_amps_mute(true);
-                vTaskDelay(pdMS_TO_TICKS(200));
-                board_link_amps_mute(false);
+                board_link_amps_toggle_mute();
 
                 Teufel::Task::Bluetooth::postMessage(ot_id, Teufel::Ux::Bluetooth::NotifyAuxConnectionChange {s_is_aux_jack_connected});
             }
@@ -740,15 +739,17 @@ static const GenericThread::Config<AudioMessage> threadConfig = {
                                 Leds::indicate_power_off(getProperty<Tus::BatteryLevel>());
                             }
 
-                            auto bt_status             = getProperty<Tub::Status>();
-                            auto mapped_source_pattern = Teufel::Core::mapValue(StatusToSourceOffMapper, bt_status);
-                            if (mapped_source_pattern.has_value())
                             {
-                                Leds::set_source_pattern(mapped_source_pattern.value());
-                            }
-                            else
-                            {
-                                log_error("No source pattern for status %s", getDesc(bt_status));
+                                auto bt_status             = getProperty<Tub::Status>();
+                                auto mapped_source_pattern = Teufel::Core::mapValue(StatusToSourceOffMapper, bt_status);
+                                if (mapped_source_pattern.has_value())
+                                {
+                                    Leds::set_source_pattern(mapped_source_pattern.value());
+                                }
+                                else
+                                {
+                                    log_error("No source pattern for status %s", getDesc(bt_status));
+                                }
                             }
                             break;
                         }
@@ -760,6 +761,8 @@ static const GenericThread::Config<AudioMessage> threadConfig = {
                             disable_amps();
 
                             s_audio.bypass_mode = false;
+                            s_audio.pending_amp_setup = false;
+
                             break;
                         }
 
@@ -805,16 +808,7 @@ static const GenericThread::Config<AudioMessage> threadConfig = {
                         case Tus::PowerState::On: {
                             // The I2S clocks should be stable by now (provided by BT module, synchronized by the system task)
                             // We should now be able to safely start configuring the amplifiers
-                            board_link_amps_mode_t amp_mode = s_audio.bypass_mode ? AMP_MODE_BYPASS : AMP_MODE_NORMAL;
-                            board_link_amps_setup_woofer(amp_mode);
-                            board_link_amps_setup_tweeter(amp_mode);
-
-                            if (isProperty(Tua::EcoMode{true}))
-                            {
-#ifndef INCLUDE_PRODUCTION_TESTS
-                                board_link_amps_enable_eco_mode(true);
-#endif
-                            }
+                            setup_amps();
 
 #ifdef BOARD_CONFIG_HAS_NO_I2C_MODE
                             if (s_audio.no_i2c_mode)
@@ -891,9 +885,7 @@ static const GenericThread::Config<AudioMessage> threadConfig = {
                 [](const Tua::EcoMode &p)
                 {
                     setProperty(p);
-#ifndef INCLUDE_PRODUCTION_TESTS
-                    board_link_amps_enable_eco_mode(p.value);
-#endif
+                    configure_eco_mode(p.value);
                     Leds::set_source_pattern(p.value ? Leds::SourcePattern::EcoModeOn : Leds::SourcePattern::EcoModeOff);
                     Teufel::Task::Bluetooth::postMessage(ot_id, p);
                     Teufel::Task::Bluetooth::postMessage(ot_id, Tua::RequestSoundIcon {ACTIONSLINK_SOUND_ICON_POSITIVE_FEEDBACK,
@@ -911,14 +903,14 @@ static const GenericThread::Config<AudioMessage> threadConfig = {
                 [](const Tua::BassLevel &p)
                 {
                     setProperty(p);
-#ifndef INCLUDE_PRODUCTION_TESTS
+#ifndef INCLUDE_FACTORY_TESTS
                     board_link_amps_set_bass_level(p.value);
 #endif
                 },
                 [](const Tua::TrebleLevel &p)
                 {
                     setProperty(p);
-#ifndef INCLUDE_PRODUCTION_TESTS
+#ifndef INCLUDE_FACTORY_TESTS
                     board_link_amps_set_treble_level(p.value);
 #endif
                 },
@@ -996,6 +988,28 @@ static void read_io_expander_inputs() {
     }
 
     button_handler_process(s_button_handler, s_buttons_state);
+}
+
+static void configure_eco_mode(bool enable)
+{
+#ifndef INCLUDE_FACTORY_TESTS
+    board_link_amps_enable_eco_mode(enable);
+
+    auto bass   = enable ? 0 : getProperty<Tua::BassLevel>().value;
+    auto treble = enable ? 0 : getProperty<Tua::TrebleLevel>().value;
+
+    board_link_amps_set_bass_level(bass);
+    board_link_amps_set_treble_level(treble);
+#endif
+}
+
+static void setup_amps()
+{
+    board_link_amps_mode_t amp_mode = s_audio.bypass_mode ? AMP_MODE_BYPASS : AMP_MODE_NORMAL;
+    board_link_amps_setup_woofer(amp_mode);
+    board_link_amps_setup_tweeter(amp_mode);
+
+    configure_eco_mode(isProperty(Tua::EcoMode{true}));
 }
 
 static void disable_amps()

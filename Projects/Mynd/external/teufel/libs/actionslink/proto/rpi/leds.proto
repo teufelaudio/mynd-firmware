@@ -1,0 +1,24 @@
+syntax = "proto3";
+package ActionsLink.Rpi.Leds;
+
+enum Led {
+  LED_STATUS = 0;
+  LED_SOURCE = 1;
+}
+
+/**
+ * RGB color representation.
+ */
+message RgbColor {
+  uint32 r = 1;
+  uint32 g = 2;
+  uint32 b = 3;
+}
+
+message PlayLedPattern {
+  enum Pattern {
+    POSITIVE_FEEDBACK = 0;
+    NEGATIVE_FEEDBACK = 1;
+  }
+  Pattern pattern = 1;
+}

@@ -1,4 +1,11 @@
+
+// Due to the flash size limit, only the WARNING level is available
+// for use in the complete firmware (including the bootloader).
+#if defined(BOOTLOADER)
+#define LOG_LEVEL LOG_LEVEL_WARNING
+#else
 #define LOG_LEVEL LOG_LEVEL_INFO
+#endif
 #include "logger.h"
 #include "charge_controller.h"
 
@@ -72,7 +79,7 @@ Teufel::Ux::System::ChargerStatus ChargeController::process(uint16_t battery_vol
 
     if (new_charge_status != m_charger_status)
     {
-        log_info("Charger: %s -> %s", getDesc(m_charger_status), getDesc(new_charge_status));
+        log_highlight("Charger: %s -> %s", getDesc(m_charger_status), getDesc(new_charge_status));
         m_charger_status = new_charge_status;
         // Apply the charger status
         m_charger_status == Inactive ? m_charger_ll_controller.disable() : m_charger_ll_controller.enable(bfc_enabled);

@@ -17,9 +17,9 @@ void                   save_persistent_parameters();
 void                   set_power_state(const Teufel::Ux::System::PowerState &state);
 void                   factory_reset();
 
-#ifdef INCLUDE_PRODUCTION_TESTS
+#if defined(INCLUDE_FACTORY_TESTS) || defined(MYND_RPI_MODIFICATION)
 // RAW battery data which are exposed only for prod testing purpose!
 int8_t   get_battery_temperature();
 uint16_t get_battery_voltage_mv();
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif // INCLUDE_FACTORY_TESTS
 }

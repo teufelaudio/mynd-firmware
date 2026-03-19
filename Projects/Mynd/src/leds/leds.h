@@ -26,6 +26,7 @@ enum class Color : uint8_t
     White
 };
 
+#ifndef MYND_RPI_MODIFICATION
 enum class SourcePattern : uint8_t
 {
     Off,
@@ -70,11 +71,58 @@ inline auto getDesc(const SourcePattern &value)
             return "Unknown";
     }
 }
+#else
+enum class SourcePattern : uint8_t
+{
+    Off,
+    EcoModeOn,
+    EcoModeOff,
+    RpiPending,
+    RpiMpdStreaming,
+    RpiMpdIdle,
+    RpiAirplayStreaming,
+    RpiAirplayIdle,
+    RpiBluetoothStreaming,
+    RpiBluetoothIdle,
+    RpiSpotifyStreaming,
+    RpiSpotifyIdle,
+    OffFromRpiMpd,
+    OffFromRpiAirplay,
+    OffFromRpiBt,
+    OffFromRpiSpotify,
+    PositiveFeedback,
+    NegativeFeedback,
+};
+
+inline auto getDesc(const SourcePattern &value)
+{
+    switch (value)
+    {
+        case SourcePattern::Off:
+            return "Off";
+        case SourcePattern::PositiveFeedback:
+            return "PositiveFeedback";
+        case SourcePattern::RpiPending:
+            return "RpiPending";
+        case SourcePattern::RpiMpdStreaming:
+            return "RpiMpdStreaming";
+        case SourcePattern::RpiAirplayStreaming:
+            return "RpiAirplayStreaming";
+        case SourcePattern::RpiBluetoothStreaming:
+            return "RpiBluetoothStreaming";
+        case SourcePattern::RpiSpotifyStreaming:
+            return "RpiSpotifyStreaming";
+        default:
+            return "Unknown";
+    }
+}
+#endif // NOT MYND_RPI_MODIFICATION
 
 void tick();
 bool is_engine_running(Led led);
 void run_engines();
 void set_solid_color(Led led, Color color);
+void set_solid_rgb(Led led, uint8_t r, uint8_t g, uint8_t b);
 void set_source_pattern(SourcePattern pattern);
 void set_brightness(uint8_t brightness);
 

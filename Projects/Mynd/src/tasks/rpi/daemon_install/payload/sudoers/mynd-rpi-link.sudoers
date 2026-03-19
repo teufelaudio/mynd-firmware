@@ -1,0 +1,37 @@
+# Sudoers configuration for Mynd RPi Link Daemon
+# 
+# SECURITY NOTE: This allows the daemon to run specific commands without a password.
+# Only grant this permission if you trust the daemon and the MCU communication.
+# 
+# To install:
+# 1. Copy this file to /etc/sudoers.d/mynd-rpi-link
+# 2. Set permissions: sudo chmod 0440 /etc/sudoers.d/mynd-rpi-link
+# 3. Verify: sudo visudo -c
+#
+# To customize the user, replace 'pi' with your desired username below 
+# and update the User, Group fields within `mynd-rpi-link.service` before installation.
+
+# Allow user 'pi' to run poweroff without password
+pi ALL=(ALL) NOPASSWD: /sbin/poweroff
+
+# Allow nmcli for configure_wifi (via tshell configure_wifi command)
+pi ALL=(ALL) NOPASSWD: /usr/bin/nmcli device wifi rescan
+pi ALL=(ALL) NOPASSWD: /usr/bin/nmcli connection up *
+# Passwd-file form (password not on command line); fallback with password arg
+pi ALL=(ALL) NOPASSWD: /usr/bin/nmcli --passwd-file * device wifi connect *
+pi ALL=(ALL) NOPASSWD: /usr/bin/nmcli device wifi connect *
+
+# Allow nmcli for enable_hotspot when using config-defined hotspot
+pi ALL=(ALL) NOPASSWD: /usr/bin/nmcli device wifi hotspot *
+
+# Allow nmcli for cycle_wifi_network (via BT button double press)
+pi ALL=(ALL) NOPASSWD: /usr/bin/nmcli connection down *
+
+# Allow nmcli radio toggle for aggressive BT/WiFi coexistence mode
+pi ALL=(ALL) NOPASSWD: /usr/bin/nmcli radio wifi off
+pi ALL=(ALL) NOPASSWD: /usr/bin/nmcli radio wifi on
+
+# Allow renderer control for cycle_source
+pi ALL=(ALL) NOPASSWD: /var/www/util/restart-renderer.php *
+pi ALL=(ALL) NOPASSWD: /var/www/util/blu-control.sh -D
+

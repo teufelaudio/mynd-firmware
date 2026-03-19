@@ -39,12 +39,19 @@ bool actionslink_decode_to_mcu_response_message(pb_istream_t *stream, const pb_f
 
     log_info("decoder: decoding response: tag %d", field->tag);
 
-    if (field->tag == ActionsLink_ToMcuResponse_get_firmware_version_tag)
+    if (false)
+    {
+        // Placeholder
+    }
+#ifdef ActionsLink_ToMcuResponse_get_firmware_version_tag
+    else if (field->tag == ActionsLink_ToMcuResponse_get_firmware_version_tag)
     {
         ActionsLink_System_FirmwareVersion *fw_version = field->pData;
         fw_version->build.funcs.decode = actionslink_decode_string;
         fw_version->build.arg = actual_arg;
     }
+#endif
+#ifdef ActionsLink_ToMcuResponse_get_this_device_name_tag
     else if (field->tag == ActionsLink_ToMcuResponse_get_this_device_name_tag)
     {
         // FIXME: We need to check if the response is ResponseDeviceName.name or ResponseDeviceName.error
@@ -66,6 +73,15 @@ bool actionslink_decode_to_mcu_response_message(pb_istream_t *stream, const pb_f
         device_name->Result.name.funcs.decode = actionslink_decode_string;
         device_name->Result.name.arg = actual_arg;
     }
+#endif
+#ifdef ActionsLink_ToMcuResponse_get_bt_paired_device_list_tag
+    else if (field->tag == ActionsLink_ToMcuResponse_get_paired_device_list_tag)
+    {
+        ActionsLink_Bluetooth_ResponsePairedDeviceList *paired_device_list = field->pData;
+        paired_device_list->cb_Result.funcs.decode = actionslink_decode_paired_device_list;
+        paired_device_list->cb_Result.arg = actual_arg;
+    }
+#endif
     else
     {
         return false;
@@ -78,12 +94,14 @@ bool actionslink_decode_to_mcu_event_message(pb_istream_t *stream, const pb_fiel
 {
     void *actual_arg = *((void **) arg);
 
+#ifdef ActionsLink_ToMcuEvent_app_packet_tag
     if (field->tag == ActionsLink_ToMcuEvent_app_packet_tag)
     {
         ActionsLink_App_Packet *app_packet = field->pData;
         app_packet->payload.funcs.decode = actionslink_decode_string;
         app_packet->payload.arg = actual_arg;
     }
+#endif
     return true;
 }
 
@@ -112,6 +130,43 @@ bool actionslink_decode_string(pb_istream_t *stream, const pb_field_t *field, vo
     p_buffer_dsc->p_buffer[size_to_read] = 0;
     return true;
 }
+
+#ifdef ActionsLink_ToMcuResponse_get_bt_paired_device_list_tag
+/* Decoder for paired devices list */
+bool actionslink_decode_paired_device_list(pb_istream_t *stream, const pb_field_t *field, void **arg)
+{
+    void *actual_arg = *((void **) arg);
+
+    ActionsLink_Bluetooth_PairedDeviceList *list = field->pData;
+    list->devices.funcs.decode                   = actionslink_decode_device;
+    list->devices.arg                            = actual_arg;
+
+    return true;
+}
+
+/* Decoder for the repeated paired-device submessage */
+bool actionslink_decode_device(pb_istream_t *stream, const pb_field_t *field, void **arg)
+{
+    (void) field;
+    actionslink_bt_paired_device_list_t *p_devices = *((actionslink_bt_paired_device_list_t **) arg);
+    if (p_devices->number_of_items >= p_devices->list_size)
+    {
+        log_decoder_error(__FUNCTION__, "list is not large enough");
+        return false;
+    }
+
+    ActionsLink_Bluetooth_Device message = ActionsLink_Bluetooth_Device_init_zero;
+    if (!pb_decode(stream, ActionsLink_Bluetooth_Device_fields, &message))
+    {
+        log_decoder_error(__FUNCTION__, stream->errmsg);
+        return false;
+    }
+
+    p_devices->p_list[p_devices->number_of_items] = message.address;
+    p_devices->number_of_items++;
+    return true;
+}
+#endif
 
 // Unused code that could be useful for future reference
 #if 0

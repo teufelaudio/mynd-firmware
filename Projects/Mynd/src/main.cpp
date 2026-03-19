@@ -4,6 +4,9 @@
 #include "board_hw.h"
 #include "board_link.h"
 #include "bsp_debug_uart.h"
+#ifdef MYND_RPI_MODIFICATION
+#include "bsp_bluetooth_uart.h"
+#endif
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -124,15 +127,16 @@ int main()
 #endif
 
 #ifdef LOGGER_USE_EXTERNAL_THREAD
-    static auto sbuffer_logger_h = xStreamBufferCreateStatic(sizeof(logger_sbuffer_storage), 1u, logger_sbuffer_storage,
-                                                             &LoggerStreamBufferStruct);
-
-    logger_init(sbuffer_logger_h);
 
     TaskHandle_t status = nullptr;
     status              = xTaskCreateStatic(
                      +[](void *)
                      {
+            static auto sbuffer_logger_h = xStreamBufferCreateStatic(sizeof(logger_sbuffer_storage), 1u,
+                                                                                  logger_sbuffer_storage, &LoggerStreamBufferStruct);
+
+            logger_init(sbuffer_logger_h);
+
             for (;;)
             {
                 if (uint8_t data; xStreamBufferReceive(sbuffer_logger_h, &data, 1, portMAX_DELAY) > 0)

@@ -76,6 +76,20 @@ typedef enum
 } tas5825p_gpio_mode_t;
 
 /**
+ * @brief Audio sampling rate values from FS_MON register (bits 3-0)
+ */
+typedef enum
+{
+    TAS5825P_FS_ERROR      = 0x0, ///< 0000: FS Error
+    TAS5825P_FS_16KHZ      = 0x4, ///< 0100: 16 KHz
+    TAS5825P_FS_32KHZ      = 0x6, ///< 0110: 32 KHz
+    TAS5825P_FS_RESERVED_8 = 0x8, ///< 1000: Reserved
+    TAS5825P_FS_48KHZ      = 0x9, ///< 1001: 48 KHz
+    TAS5825P_FS_96KHZ      = 0xB, ///< 1011: 96 KHz
+    TAS5825P_FS_192KHZ     = 0xD, ///< 1101: 192 KHz
+} tas5825p_fs_t;
+
+/**
  * @brief Initializes the TAS5825P driver.
  *
  * @param[in] p_config          pointer to configuration structure
@@ -194,3 +208,27 @@ int tas5825p_clear_analog_fault(const tas5825p_handler_t *h);
  * @return 0 if successful, error code otherwise
  */
 int tas5825p_recover_dc_fake_fault(const tas5825p_handler_t *h);
+
+/**
+ * @brief Read FS_MON register (0x37) and extract sampling rate.
+ *
+ * @param[in]  h         pointer to handler
+ * @param[out] p_fs      pointer to detected word-select (frame) sampling rate (extracted from bits 3-0)
+ *
+ * @return 0 if successful, error code otherwise
+ *
+ * @details Table 9-18. FS_MON Register Field Descriptions
+ * Bit  Field            Type  Reset  Description
+ * 7-6  RESERVED         R/W   00     This bit is reserved
+ * 5-4  SCLK_RATIO_HIGH  R     00     2 msbs of detected SCLK ratio
+ * 3-0  FS               R     0000   These bits indicate the currently detected audio sampling rate.
+ *                                    0000: FS Error
+ *                                    0100: 16 KHz
+ *                                    0110: 32 KHz
+ *                                    1000: Reserved
+ *                                    1001: 48 KHz
+ *                                    1011: 96 KHz
+ *                                    1101: 192 KHz
+ *                                    Others: Reserved
+ */
+int tas5825p_read_fs_mon(const tas5825p_handler_t *h, tas5825p_fs_t *p_fs);

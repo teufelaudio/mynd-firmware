@@ -39,7 +39,7 @@ using BluetoothMessage = std::variant<
     Teufel::Ux::Audio::RequestSoundIcon,
     Teufel::Ux::Audio::StopPlayingSoundIcon,
     Teufel::Ux::Audio::EcoMode
-#ifdef INCLUDE_PRODUCTION_TESTS
+#ifdef INCLUDE_FACTORY_TESTS
     ,
     Teufel::Ux::Bluetooth::FWVersionProdTest,
     Teufel::Ux::Bluetooth::DeviceNameProdTest,
@@ -48,7 +48,7 @@ using BluetoothMessage = std::variant<
     Teufel::Ux::Bluetooth::BtRssiProdTest,
     Teufel::Ux::Bluetooth::SetVolumeProdTest,
     Teufel::Ux::Bluetooth::AudioBypassProdTest
-#endif // INCLUDE_PRODUCTION_TESTS
+#endif // INCLUDE_FACTORY_TESTS
 >;
 // clang-format on
 

@@ -64,11 +64,12 @@ struct tas5805m_handler
     uint8_t                 i2c_device_address;
 };
 
-static int set_dsp_memory_to_book_and_page(const tas5805m_handler_t *h, uint8_t book, uint8_t page);
-static int tas5805m_read_register(const tas5805m_handler_t *h, uint8_t register_address, uint8_t *p_data);
-static int tas5805m_write_register(const tas5805m_handler_t *h, uint8_t register_address, uint8_t value);
-static int tas5805m_modify_register(const tas5805m_handler_t *h, uint8_t register_address, uint8_t bitmask,
-                                    uint8_t value);
+static int           set_dsp_memory_to_book_and_page(const tas5805m_handler_t *h, uint8_t book, uint8_t page);
+static int           tas5805m_read_register(const tas5805m_handler_t *h, uint8_t register_address, uint8_t *p_data);
+static int           tas5805m_write_register(const tas5805m_handler_t *h, uint8_t register_address, uint8_t value);
+static int           tas5805m_modify_register(const tas5805m_handler_t *h, uint8_t register_address, uint8_t bitmask,
+                                              uint8_t value);
+static tas5805m_fs_t tas5805m_decode_fs_code(uint8_t fs_code);
 
 tas5805m_handler_t *tas5805m_init(const tas5805m_config_t *p_config)
 {
@@ -279,4 +280,42 @@ static int set_dsp_memory_to_book_and_page(const tas5805m_handler_t *h, uint8_t 
 
     // Now that we are in the right book, change to the wished page
     return tas5805m_write_register(h, 0x00, page);
+}
+
+int tas5805m_read_fs_mon(const tas5805m_handler_t *h, tas5805m_fs_t *p_fs)
+{
+    if (p_fs == NULL)
+    {
+        return -E_TAS5805M_PARAM;
+    }
+    if (set_dsp_memory_to_book_and_page(h, 0x00, 0x00) != 0)
+    {
+        return -E_TAS5805M_IO;
+    }
+    uint8_t raw_value;
+    int     ret = tas5805m_read_register(h, TAS5805M_REG_FS_MON, &raw_value);
+    if (ret < 0)
+    {
+        return -E_TAS5805M_IO;
+    }
+
+    *p_fs = tas5805m_decode_fs_code(raw_value & 0x0F);
+    return 0;
+}
+
+static tas5805m_fs_t tas5805m_decode_fs_code(uint8_t raw_fs_code)
+{
+    switch (raw_fs_code)
+    {
+        case TAS5805M_FS_ERROR:
+        case TAS5805M_FS_8KHZ:
+        case TAS5805M_FS_16KHZ:
+        case TAS5805M_FS_32KHZ:
+        case TAS5805M_FS_48KHZ:
+        case TAS5805M_FS_96KHZ:
+            return (tas5805m_fs_t) raw_fs_code;
+        default:
+            // Map unknown and reserved FS codes to error
+            return TAS5805M_FS_ERROR;
+    }
 }

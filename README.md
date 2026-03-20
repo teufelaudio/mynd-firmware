@@ -23,16 +23,18 @@ You will need:
 - Raspberry Pi Zero 2 W (approx. 20 €)
 - microSD card (approx. 10 €)
 - MYNDberry adapter PCB (approx. 15 €)
-  - [more information here](https://github.com/teufelaudio/mynd-hardware/wiki/myndberry_pcb)
+  - [look here for more information](https://github.com/teufelaudio/mynd-hardware/wiki/myndberry_pcb)
 - 2.5 mm (M3) allen wrench / hex key
 - PH-01 screwdriver
-- Flat-head screwdriver (small)
+- Flathead screwdriver (small)
 
 ---
 
 ## 1. Update the MYND Speaker Firmware
 
 - Download the MYNDberry firmware binary `myndberry-update-firmware-mcu.bin` from the *teufelaudio* GitHub *Releases* section
+  - [Download MYNDberry MCU firmware](https://github.com/teufelaudio/mynd-firmware/releases/latest/download/myndberry-update-firmware-mcu.bin
+)
 
 - Update the production MYND unit using the drag-and-drop update procedure documented in the HowTo:
   - [Perform a Drag & Drop USB Firmware Update](https://github.com/teufelaudio/mynd-firmware/wiki/perform_drag&drop_update)
@@ -103,7 +105,7 @@ You will need:
 
 ## <a id="step4"></a>4. Carefully Integrate MYNDberry into your MYND
 
-Follow the [HowTo Install MYNDberry](https://github.com/teufelaudio/mynd-hardware/wiki/install_myndberry) guide for in-depth instructions on how to:
+Follow the [HowTo Install MYNDberry](https://github.com/teufelaudio/mynd-hardware/wiki/myndberry_pcb) guide for in-depth instructions on how to:
 
 - Open the MYND speaker by completely unscrewing and removing the grill (4 screws), and then the speaker frame (7 screws)
   - **Hint:** In the top right corner, there is a notch available to easily lever the speaker frame out using a flathead screwdriver
@@ -115,7 +117,7 @@ Follow the [HowTo Install MYNDberry](https://github.com/teufelaudio/mynd-hardwar
 
 ---
 
-## 4. Power Cycle the MYND Speaker
+## 5. Power Cycle the MYND Speaker
 
 - Power on the MYND speaker, wait **45-60 seconds** (patience is a virtue;) for the BT source led pattern to stop flashing, meaning moOde has completed its boot up process.
 
@@ -178,9 +180,10 @@ Use the MYND hardware buttons to control playback, volume, WiFi internet radio a
 
 Your MYND is now fully open...source =D. If something does not work as expected, see **Troubleshooting** section below. For configuration details and developer-oriented options, see **Advanced**.
 
-## 5. Revert your MYND Back to Production
+## 6. Revert your MYND Back to Production
 
 - Obtain the **production** MYND firmware binary `mynd-update-firmware-mcu.bin`, included alongside the MYNDberry release artifacts, from the *teufelaudio* GitHub *Releases* section
+  - [Download production MYND MCU firmware](https://github.com/teufelaudio/mynd-firmware/releases/latest/download/mynd-update-firmware-mcu.bin)
 
 - Update the MYND unit using this **production** firmware and following the drag-and-drop update procedure documented in the HowTo:
   - [Perform a Drag & Drop USB Firmware Update](https://github.com/teufelaudio/mynd-firmware/wiki/perform_drag&drop_update)
@@ -198,8 +201,9 @@ Your MYND is now fully open...source =D. If something does not work as expected,
 
 ### Additonal Documentation
 - Mynd RpiLink Daemon: [mynd-firmware/Projects/Mynd/src/tasks/rpi/daemon_install/README.md](https://github.com/teufelaudio/mynd-firmware/blob/MYNDberry/Projects/Mynd/src/tasks/rpi/daemon_install/README.md)
-- ActionsLink protobuf protocol internals and extension examples: [mynd-firmware/Projects/Mynd/docs/README_ACTIONSLINK_PROTOCOL.md](https://github.com/teufelaudio/mynd-firmware/blob/MYNDberry/Projects/Mynd/docs/README_ACTIONSLINK_PROTOCOL.md)
-- Configure moOde service behavior and defaults: [mynd-firmware/Projects/Mynd/docs/README_CONFIGURE.md](https://github.com/teufelaudio/mynd-firmware/blob/MYNDberry/Projects/Mynd/docs/README_CONFIGURE.md)
+- ActionsLink protocol specification: [mynd-firmware/blob/MYNDberry/Projects/Mynd/external/teufel/libs/actionslink/docs/PROTOCOL.md](https://github.com/teufelaudio/mynd-firmware/blob/MYNDberry/Projects/Mynd/external/teufel/libs/actionslink/docs/PROTOCOL.md)
+- ActionsLink protobuf protocol internals and extension examples: [mynd-firmware/Projects/Mynd/docs/README_ACTIONSLINK_PROTOCOL.md](https://github.com/teufelaudio/mynd-firmware/blob/MYNDberry/Projects/Mynd/src/tasks/rpi/daemon_install/docs/README_ACTIONSLINK_PROTOCOL.md)
+- Configure moOde service behavior and defaults: [mynd-firmware/Projects/Mynd/docs/README_CONFIGURE.md](https://github.com/teufelaudio/mynd-firmware/blob/MYNDberry/Projects/Mynd/src/tasks/rpi/daemon_install/docs/README_CONFIGURE.md)
 - LED patterns and extension examples: [mynd-firmware/Projects/Mynd/src/leds/README.md](https://github.com/teufelaudio/mynd-firmware/blob/MYNDberry/Projects/Mynd/src/leds/README.md)
 
 #### Production MYND Documentation

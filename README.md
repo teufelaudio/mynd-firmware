@@ -182,13 +182,8 @@ Your MYND is now fully open...source =D. If something does not work as expected,
 
 ## 6. Revert your MYND Back to Production
 
-- Obtain the **production** MYND firmware binary `mynd-update-firmware-mcu.bin`, included alongside the MYNDberry release artifacts, from the *teufelaudio* GitHub *Releases* section
-  - [Download production MYND MCU firmware](https://github.com/teufelaudio/mynd-firmware/releases/latest/download/mynd-update-firmware-mcu.bin)
-
-- Update the MYND unit using this **production** firmware and following the drag-and-drop update procedure documented in the HowTo:
-  - [Perform a Drag & Drop USB Firmware Update](https://github.com/teufelaudio/mynd-firmware/wiki/perform_drag&drop_update)
-
 - Perform [step 4](#step4) in reverse and carefully re-integrate the Bluetooth module hardware back into the MYND PCB.
+- Then, go to the (Teufel Go App section)[https://support.teufel.de/hc/en-us/sections/360003769680-Teufel-Go-App] under Teufel Software and Apps to locate and follow instructions to update both the MCU and Bluetooth firmwares to their latest production versions.
 
 ---
 

@@ -183,7 +183,7 @@ Your MYND is now fully open...source =D. If something does not work as expected,
 ## 6. Revert your MYND Back to Production
 
 - Perform [step 4](#step4) in reverse and carefully re-integrate the Bluetooth module hardware back into the MYND PCB.
-- Then, go to the [Teufel Go App section](https://support.teufel.de/hc/en-us/sections/360003769680-Teufel-Go-App) under Teufel Software and Apps to locate and follow instructions to update both the MCU and Bluetooth firmwares to their latest production versions.
+- Then, [click here](https://www.teufelaudio.com/mynd-software-updates.html) or go to the [Software-Updates section](https://www.teufelaudio.com/software-updates.html) under Teufel Software and Apps to locate and follow instructions to update both the MCU and Bluetooth firmwares to their latest production versions.
 
 ---
 
